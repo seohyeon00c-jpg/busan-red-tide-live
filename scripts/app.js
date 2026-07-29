@@ -91,15 +91,6 @@ const iconColorClasses = {
 
 const detailMetricDefinitions = [
   {
-    key: 'cellDensity',
-    label: '적조생물 세포밀도',
-    icon: 'activity',
-    format: (value) => numberFormatter.format(value),
-    unit: 'cells/mL',
-    description:
-      '적조생물의 양을 직접 나타내는 핵심 지표입니다. 값이 빠르게 늘수록 적조 발생·확산 가능성이 커질 수 있습니다.',
-  },
-  {
     key: 'waterTemperature',
     label: '수온',
     icon: 'thermometer',
@@ -220,8 +211,7 @@ function renderSystemState() {
 
 function renderDataSources() {
   const container = document.querySelector('#data-source-grid');
-  const warningList = document.querySelector('#data-warning-list');
-  if (!container || !warningList) return;
+  if (!container) return;
 
   const displayedSources = [
     ...dashboardState.sources,
@@ -259,16 +249,6 @@ function renderDataSources() {
     })
     .join('');
 
-  warningList.innerHTML = dashboardState.warnings
-    .map(
-      (warning) => `
-        <div class="flex items-start gap-2 rounded-md border border-amber-300/10 bg-amber-300/[0.055] px-3 py-2 text-[9px] leading-4 text-amber-100/70">
-          <i data-lucide="info" class="mt-0.5 h-3.5 w-3.5 shrink-0"></i>
-          <span>${escapeHtml(warning)}</span>
-        </div>
-      `,
-    )
-    .join('');
 }
 
 function initializeMobileNavigation() {
@@ -414,7 +394,6 @@ function renderAreaDetail(area) {
   );
   const metrics = document.querySelector('#detail-metrics');
   const dataBadge = document.querySelector('#selected-data-badge');
-  const organismSource = getFieldSource(area, 'organism');
 
   document.querySelector('#selected-area-name').textContent = area.name;
   document.querySelector('#selected-area-detail').textContent = area.detail;
@@ -423,12 +402,6 @@ function renderAreaDetail(area) {
     '날짜별 해양예보 연결 중';
   document.querySelector('#selected-risk-level').style.color = riskColor;
   riskGaugeLabel.textContent = '계산 중';
-  document.querySelector('#selected-organism').textContent =
-    organismSource.value === 'observed' ? area.organism : '자료 없음';
-  document.querySelector('#selected-organism-source').textContent =
-    organismSource.label;
-  document.querySelector('#selected-organism-source').dataset.source =
-    organismSource.value;
   document.querySelector('#selected-reference-time').textContent =
     `${formatReferenceTime(area.referenceTime)} 기준`;
 

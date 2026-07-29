@@ -400,17 +400,9 @@
               </div>
 
               <div class="p-4">
-                <div class="flex items-center justify-between rounded-lg border-l-4 border-tide-600 bg-slate-50 px-3 py-2.5">
-                  <span class="text-[9px] font-semibold text-slate-500">적조 원인생물</span>
-                  <span class="flex items-center gap-2">
-                    <small id="selected-organism-source" class="metric-source" data-source="unavailable">자료 없음</small>
-                    <strong id="selected-organism" class="text-xs text-ocean-900">-</strong>
-                  </span>
-                </div>
-
                 <div
                   id="detail-metrics"
-                  class="mt-3 grid grid-cols-2 gap-2"
+                  class="grid grid-cols-2 gap-2"
                   aria-label="선택 해역 환경 지표"
                 ></div>
 
@@ -490,12 +482,6 @@
               <small class="mt-1 block text-[8px] text-slate-500">연결 실패도 숫자로 대체 안 함</small>
             </div>
           </div>
-
-          <div
-            id="data-warning-list"
-            class="mt-4 space-y-2"
-            aria-label="데이터 연결 주의사항"
-          ></div>
 
           <div class="mt-4 flex items-start gap-2 border-t border-white/10 pt-4 text-[9px] leading-5 text-slate-500">
             <i data-lucide="key-round" class="mt-0.5 h-3.5 w-3.5 shrink-0"></i>
@@ -873,6 +859,6 @@
     </footer>
 
     <script src="./scripts/config.js"></script>
-    <script type="module" src="./scripts/app.js?v=20260729-area-calendar-v7"></script>
+    <script type="module" src="./scripts/app.js?v=20260729-detail-cleanup-v9"></script>
   </body>
 </html>
