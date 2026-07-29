@@ -1,11 +1,23 @@
 import {
   calculateDailyForecastRisk,
-} from './risk.js?v=20260729-monthly-risk-v6';
+} from './risk.js?v=20260729-area-calendar-v7';
 import {
   fetchMonthlyMarineHistory,
-} from './marineForecast.js?v=20260729-monthly-risk-v6';
+} from './marineForecast.js?v=20260729-area-calendar-v7';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+const calendarState = {
+  today: null,
+  areas: [],
+  history: null,
+  selectedAreaId: null,
+  onAreaSelect: null,
+  grid: null,
+  title: null,
+  notice: null,
+  status: null,
+  areaTabs: null,
+};
 
 function toDateKey(date) {
   return [
@@ -24,7 +36,7 @@ function getRiskClass(score) {
 }
 
 /**
- * 날짜별 부산 6개 해역 최고 모델 위험지수를 포함한 월간 달력을 만듭니다.
+ * 선택 해역의 날짜별 모델 위험지수를 포함한 월간 달력을 만듭니다.
  */
 export function buildCalendarMonth(
   year,
@@ -84,7 +96,7 @@ function createModelCell(cell) {
       role="gridcell"
       aria-label="${
         risk
-          ? `${cell.dateKey}, 부산 최고 모델 위험지수 ${risk.score}점 ${risk.level}, ${risk.areaName} 해역, ${phase}`
+          ? `${cell.dateKey}, ${risk.areaName} 해역 모델 위험지수 ${risk.score}점 ${risk.level}, ${phase}`
           : `${cell.dateKey}, 모델 위험지수 자료 없음`
       }"
     >
@@ -94,7 +106,7 @@ function createModelCell(cell) {
           ? `
             <strong>${risk.score}</strong>
             <span class="calendar-score-unit">점 · ${risk.level}</span>
-            <small class="calendar-risk-area">${risk.areaName} 최고</small>
+            <small class="calendar-risk-area">${risk.areaName}</small>
             <small class="calendar-risk-phase">${phase}</small>
           `
           : '<span class="calendar-no-record">자료 없음</span>'
@@ -132,67 +144,154 @@ function getCalendarDateRange(today) {
   };
 }
 
-function calculateMonthlyHighestRisks(areas, history) {
-  const areaById = new Map(areas.map((area) => [area.id, area]));
-  const highestByDate = new Map();
+function calculateMonthlyAreaRisks(area, history) {
+  const areaHistory = history.areas.find(
+    (candidate) => candidate.areaId === area.id,
+  );
+  if (!areaHistory) return [];
 
-  history.areas.forEach((areaHistory) => {
-    const area = areaById.get(areaHistory.areaId);
-    if (!area) return;
-
-    areaHistory.days.forEach((day) => {
+  return areaHistory.days
+    .map((day) => {
       const risk = calculateDailyForecastRisk(area, day);
-      if (!risk.available) return;
+      if (!risk.available) return null;
 
-      const current = highestByDate.get(day.date);
-      if (!current || risk.score > current.score) {
-        highestByDate.set(day.date, {
-          date: day.date,
-          score: risk.score,
-          level: risk.level,
-          areaId: area.id,
-          areaName: area.name,
-          seaSurfaceTemperature: day.seaSurfaceTemperature,
-          oceanCurrentVelocity: day.oceanCurrentVelocity,
-          waveHeight: day.waveHeight,
-        });
+      return {
+        date: day.date,
+        score: risk.score,
+        level: risk.level,
+        areaId: area.id,
+        areaName: area.name,
+        seaSurfaceTemperature: day.seaSurfaceTemperature,
+        oceanCurrentVelocity: day.oceanCurrentVelocity,
+        waveHeight: day.waveHeight,
+      };
+    })
+    .filter(Boolean);
+}
+
+function getSelectedArea() {
+  return calendarState.areas.find(
+    (area) => area.id === calendarState.selectedAreaId,
+  );
+}
+
+function renderAreaTabs() {
+  const { areaTabs, areas, selectedAreaId, onAreaSelect } = calendarState;
+  if (!areaTabs) return;
+
+  areaTabs.innerHTML = areas
+    .map(
+      (area) => `
+        <button
+          type="button"
+          class="calendar-area-button"
+          data-calendar-area-id="${area.id}"
+          aria-pressed="${area.id === selectedAreaId}"
+        >
+          ${area.name}
+        </button>
+      `,
+    )
+    .join('');
+
+  areaTabs.querySelectorAll('[data-calendar-area-id]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const areaId = button.dataset.calendarAreaId;
+      if (typeof onAreaSelect === 'function') {
+        onAreaSelect(areaId, { moveMap: false });
+      } else {
+        selectMonthlyRiskCalendarArea(areaId);
       }
     });
   });
-
-  return [...highestByDate.values()];
 }
 
-/**
- * 과거 해양자료와 현재 해양예보를 동일 계산식에 넣은 월간 모델 달력입니다.
- */
-export async function initializeMonthlyRiskCalendar(options = {}) {
-  const today = options.today ?? new Date();
-  const areas = options.areas ?? [];
+function renderSelectedAreaCalendar() {
+  const {
+    today,
+    history,
+    grid,
+    title,
+    notice,
+    status,
+  } = calendarState;
+  const area = getSelectedArea();
+  if (!area || !today || !grid || !title || !notice || !status) return;
+
+  title.textContent =
+    `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${area.name} 적조 모델 위험지수`;
+  notice.dataset.mode = 'model';
+  notice.innerHTML = `
+    <strong>${area.name} 해역 선택</strong>
+    <span>
+      과거 날짜의 해수면수온·해류·파고 자료를 현재 모델에 넣어
+      선택한 해역의 0~100 위험지수를 표시합니다.
+      공식 적조관측이나 공식 특보가 아닙니다.
+    </span>
+  `;
+  renderAreaTabs();
+
+  const monthlyRisks = history
+    ? calculateMonthlyAreaRisks(area, history)
+    : [];
   const calendar = buildCalendarMonth(
     today.getFullYear(),
     today.getMonth(),
     today,
+    monthlyRisks,
   );
+  renderCalendarGrid(grid, calendar);
+
+  if (!history) return;
+  status.dataset.state = 'connected';
+  status.innerHTML = `
+    <strong>자료원: Open-Meteo Marine API · ${area.name}</strong>
+    <span>
+      ${history.startDate}~${history.endDate} 해양 수치모델 자료 사용 ·
+      Chl-a·염분·DO·세포밀도는 현재 연결 관측값을 기준으로 사용하며,
+      없는 항목의 가중치는 0점으로 유지합니다.
+    </span>
+  `;
+}
+
+/**
+ * 지도·해역 카드 선택을 월간 위험지수 달력과 동기화합니다.
+ */
+export function selectMonthlyRiskCalendarArea(areaId) {
+  if (!areaId) return;
+  calendarState.selectedAreaId = areaId;
+  renderSelectedAreaCalendar();
+}
+
+/**
+ * 과거 해양자료와 현재 해양예보를 동일 계산식에 넣은 지역별 월간 달력입니다.
+ */
+export async function initializeMonthlyRiskCalendar(options = {}) {
+  const today = options.today ?? new Date();
+  const areas = options.areas ?? [];
   const grid = document.querySelector('#calendar-grid');
   const title = document.querySelector('#calendar-title');
   const notice = document.querySelector('#calendar-notice');
   const status = document.querySelector('#calendar-status');
+  const areaTabs = document.querySelector('#calendar-area-tabs');
 
-  if (!grid || !title || !notice || !status) return;
+  if (!grid || !title || !notice || !status || !areaTabs) return;
 
-  title.textContent =
-    `${calendar.year}년 ${calendar.monthIndex + 1}월 부산 적조 모델 위험지수`;
-  notice.dataset.mode = 'model';
-  notice.innerHTML = `
-    <strong>동일 계산식 재계산</strong>
-    <span>
-      과거 날짜의 해수면수온·해류·파고 자료를 현재 모델에 넣어,
-      부산 6개 해역 중 가장 높은 0~100 위험지수를 표시합니다.
-      공식 적조관측이나 공식 특보가 아닙니다.
-    </span>
-  `;
-  renderCalendarGrid(grid, calendar);
+  calendarState.today = today;
+  calendarState.areas = areas;
+  calendarState.history = null;
+  calendarState.selectedAreaId =
+    options.selectedAreaId ??
+    calendarState.selectedAreaId ??
+    areas[0]?.id;
+  calendarState.onAreaSelect = options.onAreaSelect ?? null;
+  calendarState.grid = grid;
+  calendarState.title = title;
+  calendarState.notice = notice;
+  calendarState.status = status;
+  calendarState.areaTabs = areaTabs;
+
+  renderSelectedAreaCalendar();
   status.dataset.state = 'loading';
   status.textContent = '현재 월의 과거 해양자료를 불러오고 있습니다.';
 
@@ -206,23 +305,8 @@ export async function initializeMonthlyRiskCalendar(options = {}) {
 
   try {
     const history = await fetchMonthlyMarineHistory(areas, range);
-    const monthlyRisks = calculateMonthlyHighestRisks(areas, history);
-    const updatedCalendar = buildCalendarMonth(
-      today.getFullYear(),
-      today.getMonth(),
-      today,
-      monthlyRisks,
-    );
-    renderCalendarGrid(grid, updatedCalendar);
-    status.dataset.state = 'connected';
-    status.innerHTML = `
-      <strong>자료원: Open-Meteo Marine API</strong>
-      <span>
-        ${history.startDate}~${history.endDate} 해양 수치모델 자료 사용 ·
-        Chl-a·염분·DO·세포밀도는 현재 연결 관측값을 기준으로 사용하며,
-        없는 항목의 가중치는 0점으로 유지합니다.
-      </span>
-    `;
+    calendarState.history = history;
+    renderSelectedAreaCalendar();
   } catch (error) {
     console.warn('월간 모델 위험지수를 계산하지 못했습니다.', error);
     status.dataset.state = 'error';

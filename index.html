@@ -41,7 +41,7 @@
 
     <!-- 무료 Lucide 아이콘 CDN을 사용합니다. -->
     <script src="https://unpkg.com/lucide@0.468.0"></script>
-    <link rel="stylesheet" href="./styles.css?v=20260729-monthly-risk-v6" />
+    <link rel="stylesheet" href="./styles.css?v=20260729-area-calendar-v7" />
   </head>
   <body class="min-h-screen bg-slate-100 text-slate-900 antialiased">
     <a href="#main-content" class="skip-link">본문으로 바로가기</a>
@@ -426,33 +426,6 @@
                     </div>
                   </div>
 
-                  <div class="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
-                    <div class="flex items-start gap-2">
-                      <i data-lucide="badge-alert" class="mt-0.5 h-4 w-4 shrink-0 text-amber-600"></i>
-                      <div>
-                        <strong
-                          id="selected-official-comparison"
-                          class="block text-[10px] text-amber-900"
-                        ></strong>
-                        <p class="mt-1 text-[9px] leading-4 text-amber-800/80">
-                          세포밀도 기준과의 단순 비교이며 실제 공식 특보 발령이
-                          아닙니다.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="mt-3 grid grid-cols-3 gap-1 text-center text-[7px]">
-                    <span class="rounded bg-amber-50 px-1 py-2 text-amber-800">
-                      <b class="block">10+</b>예비특보 수준
-                    </span>
-                    <span class="rounded bg-orange-50 px-1 py-2 text-orange-800">
-                      <b class="block">100+</b>주의보 수준
-                    </span>
-                    <span class="rounded bg-red-50 px-1 py-2 text-red-800">
-                      <b class="block">1,000+</b>경보 수준
-                    </span>
-                  </div>
                 </div>
               </div>
             </article>
@@ -685,7 +658,7 @@
                 월간 적조 달력
               </h2>
               <p class="mt-2 text-xs leading-5 text-slate-500">
-                과거 해양자료를 현재와 동일한 계산식에 넣어 날짜별 위험지수를 표시합니다.
+                해역을 선택하면 과거 해양자료 기반 날짜별 위험지수를 표시합니다.
               </p>
             </div>
           </div>
@@ -694,6 +667,13 @@
             id="calendar-notice"
             class="calendar-notice mt-4 flex flex-col gap-2 rounded-lg border px-3 py-2.5 text-[10px] sm:flex-row sm:items-center"
             data-mode="model"
+          ></div>
+
+          <div
+            id="calendar-area-tabs"
+            class="calendar-area-tabs mt-4 flex flex-wrap gap-2"
+            role="group"
+            aria-label="월간 위험지수 해역 선택"
           ></div>
 
           <div
@@ -787,6 +767,98 @@
 
           </div>
         </section>
+
+        <!-- 연구·교육용 모델 위험지수의 계산 원칙 -->
+        <section
+          id="risk-methodology"
+          class="mt-6 overflow-hidden rounded-xl border border-white/10 bg-ocean-950 p-5 text-white shadow-panel sm:p-6"
+          aria-labelledby="risk-methodology-title"
+        >
+          <div class="max-w-4xl">
+            <p class="text-[10px] font-extrabold tracking-[0.14em] text-teal-300">
+              RESEARCH PROTOTYPE
+            </p>
+            <h2
+              id="risk-methodology-title"
+              class="mt-2 text-xl font-extrabold tracking-tight sm:text-2xl"
+            >
+              위험지수 계산 원칙
+            </h2>
+            <p class="mt-3 break-keep text-xs leading-6 text-slate-300 sm:text-sm">
+              각 요소를 0~100점으로 환산한 뒤 가중치를 곱해 합산합니다.
+              세포밀도에 가장 높은 가중치를 적용하고, 날짜별 해양환경과 최근 증가
+              추세를 함께 반영합니다.
+            </p>
+          </div>
+
+          <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <article class="rounded-lg border border-white/10 bg-white/[0.045] p-4">
+              <span class="text-[9px] font-bold text-teal-300">핵심 생물 신호 · 60%</span>
+              <h3 class="mt-2 text-sm font-bold">세포밀도 45% + 증가추세 15%</h3>
+              <p class="mt-2 text-[10px] leading-5 text-slate-400">
+                현재 적조생물 밀도와 최근 증가율을 가장 중요한 신호로 사용합니다.
+              </p>
+            </article>
+            <article class="rounded-lg border border-white/10 bg-white/[0.045] p-4">
+              <span class="text-[9px] font-bold text-sky-300">생육 환경 · 33%</span>
+              <h3 class="mt-2 text-sm font-bold">수온·Chl-a·염분·DO</h3>
+              <p class="mt-2 text-[10px] leading-5 text-slate-400">
+                수온 15%, Chl-a 10%, 염분 5%, 용존산소 3%를 반영합니다.
+                수온은 24~27℃에서 적합도가 가장 높습니다.
+              </p>
+            </article>
+            <article class="rounded-lg border border-white/10 bg-white/[0.045] p-4">
+              <span class="text-[9px] font-bold text-violet-300">확산·정체 조건 · 7%</span>
+              <h3 class="mt-2 text-sm font-bold">해류 정체 4% + 잔잔한 파고 3%</h3>
+              <p class="mt-2 text-[10px] leading-5 text-slate-400">
+                해류가 느리고 파고가 낮아 적조생물이 머물기 쉬운 조건일수록 점수가
+                높아집니다.
+              </p>
+            </article>
+            <article class="rounded-lg border border-white/10 bg-white/[0.045] p-4">
+              <span class="text-[9px] font-bold text-amber-300">결측값 처리</span>
+              <h3 class="mt-2 text-sm font-bold">없는 가중치는 0점 유지</h3>
+              <p class="mt-2 text-[10px] leading-5 text-slate-400">
+                자료가 없는 요소의 가중치를 다른 항목에 재분배하지 않아 과대평가를
+                막습니다.
+              </p>
+            </article>
+          </div>
+
+          <div class="mt-5 rounded-lg border border-white/10 bg-black/15 p-4">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <strong class="text-xs text-slate-100">
+                위험지수 = 요소별 적합도 × 가중치의 합
+              </strong>
+              <span class="text-[9px] font-bold text-amber-300">
+                공식 적조특보·발생확률과 별개
+              </span>
+            </div>
+            <div class="mt-4 grid grid-cols-5 gap-1 text-center text-[8px] font-bold">
+              <span class="rounded bg-teal-500/20 px-1 py-2 text-teal-200">
+                안전<br />0~19
+              </span>
+              <span class="rounded bg-amber-400/20 px-1 py-2 text-amber-200">
+                관심<br />20~39
+              </span>
+              <span class="rounded bg-orange-400/20 px-1 py-2 text-orange-200">
+                주의<br />40~59
+              </span>
+              <span class="rounded bg-red-500/20 px-1 py-2 text-red-200">
+                경계<br />60~79
+              </span>
+              <span class="rounded bg-red-950 px-1 py-2 text-red-100">
+                심각<br />80~100
+              </span>
+            </div>
+          </div>
+
+          <p class="mt-4 flex items-start gap-2 text-[9px] leading-5 text-slate-500">
+            <i data-lucide="info" class="mt-0.5 h-3.5 w-3.5 shrink-0"></i>
+            연구·교육용 프로토타입 계산이며 실제 방제·조업·안전 판단 전에는
+            국립수산과학원 등 관계기관의 최신 발표를 확인해야 합니다.
+          </p>
+        </section>
       </div>
     </main>
 
@@ -801,6 +873,6 @@
     </footer>
 
     <script src="./scripts/config.js"></script>
-    <script type="module" src="./scripts/app.js?v=20260729-monthly-risk-v6"></script>
+    <script type="module" src="./scripts/app.js?v=20260729-area-calendar-v7"></script>
   </body>
 </html>
