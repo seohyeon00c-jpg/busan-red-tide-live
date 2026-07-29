@@ -13,12 +13,6 @@ const MAP_POSITIONS = Object.freeze({
   gadeokdo: { left: 17, top: 82 },
 });
 
-function getObservedFieldCount(area) {
-  return Object.values(area.dataStatus?.fields ?? {}).filter(
-    (status) => status === 'observed',
-  ).length;
-}
-
 function showMapError() {
   const errorElement = document.querySelector('#map-error');
   errorElement?.classList.remove('hidden');
@@ -47,21 +41,16 @@ function createMarker(area, onAreaSelect) {
   const position = MAP_POSITIONS[area.id];
   if (!position) return null;
 
-  const observedFieldCount = getObservedFieldCount(area);
-  const hasObservation = observedFieldCount > 0;
   const marker = document.createElement('button');
   marker.type = 'button';
   marker.className = 'simple-map-marker';
   marker.dataset.areaId = area.id;
   marker.style.left = `${position.left}%`;
   marker.style.top = `${position.top}%`;
-  marker.style.setProperty(
-    '--marker-color',
-    hasObservation ? '#0f766e' : '#94a3b8',
-  );
+  marker.style.setProperty('--marker-color', '#94a3b8');
   marker.setAttribute(
     'aria-label',
-    `${area.name} 해역, 공식 관측항목 ${observedFieldCount}개`,
+    `${area.name} 해역, 오늘 모델 위험점수 불러오는 중`,
   );
   marker.setAttribute('aria-pressed', 'false');
 
@@ -71,7 +60,7 @@ function createMarker(area, onAreaSelect) {
 
   const dot = document.createElement('span');
   dot.className = 'simple-map-marker__dot';
-  dot.textContent = hasObservation ? observedFieldCount : '–';
+  dot.textContent = '–';
   dot.setAttribute('aria-hidden', 'true');
 
   marker.append(label, dot);
@@ -92,6 +81,7 @@ export function initializeBusanMap(areas, onAreaSelect) {
     showMapError();
     return {
       selectArea: () => {},
+      updateRiskScore: () => {},
     };
   }
 
@@ -124,6 +114,33 @@ export function initializeBusanMap(areas, onAreaSelect) {
     selectArea(areaId) {
       if (!markers.has(areaId)) return;
       updateSelectedMarker(areaId);
+    },
+    updateRiskScore(areaId, risk) {
+      const marker = markers.get(areaId);
+      const area = areas.find((candidate) => candidate.id === areaId);
+      if (!marker || !area) return;
+
+      const dot = marker.querySelector('.simple-map-marker__dot');
+      if (!risk || !Number.isFinite(risk.score)) {
+        if (dot) dot.textContent = '–';
+        marker.style.setProperty('--marker-color', '#94a3b8');
+        marker.setAttribute(
+          'aria-label',
+          `${area.name} 해역, 오늘 모델 위험점수 자료 없음`,
+        );
+        marker.title = '최신 공개 데이터 또는 해양예보를 불러오지 못했습니다.';
+        return;
+      }
+
+      if (dot) dot.textContent = String(risk.score);
+      marker.style.setProperty('--marker-color', risk.color);
+      marker.setAttribute(
+        'aria-label',
+        `${area.name} 해역, 오늘 모델 위험점수 ${risk.score}점 ${risk.level}`,
+      );
+      marker.title =
+        `${area.name} · 오늘 모델 위험점수 ${risk.score}점 (${risk.level})\n` +
+        '최신 공개 데이터와 해양 수치예보를 동일 계산식으로 결합';
     },
   };
 }

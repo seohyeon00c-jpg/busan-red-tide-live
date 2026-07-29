@@ -41,7 +41,7 @@
 
     <!-- 무료 Lucide 아이콘 CDN을 사용합니다. -->
     <script src="https://unpkg.com/lucide@0.468.0"></script>
-    <link rel="stylesheet" href="./styles.css?v=20260729-unified-v3" />
+    <link rel="stylesheet" href="./styles.css?v=20260729-map-risk-v4" />
   </head>
   <body class="min-h-screen bg-slate-100 text-slate-900 antialiased">
     <a href="#main-content" class="skip-link">본문으로 바로가기</a>
@@ -277,10 +277,10 @@
                 COASTAL MONITORING
               </p>
               <h2 class="mt-1 text-xl font-extrabold tracking-tight text-ocean-900">
-                부산 연안 공식 관측 지도
+                부산 연안 오늘 위험지도
               </h2>
               <p class="mt-2 text-xs leading-5 text-slate-500">
-                마커 숫자는 연결된 공식 관측항목 수이며 위험점수가 아닙니다.
+                마커 숫자는 최신 공개 데이터와 해양예보로 계산한 오늘 모델 위험점수입니다.
               </p>
             </div>
             <div class="flex flex-wrap items-center gap-2 text-[10px]">
@@ -291,7 +291,7 @@
                 <span id="map-provider-label">부산 행정구역 이미지</span>
               </span>
               <span class="rounded bg-amber-50 px-2 py-1.5 font-bold text-amber-700">
-                마커 숫자 · 공식 관측항목 수
+                마커 숫자 · 오늘 모델 위험점수
               </span>
             </div>
           </div>
@@ -321,7 +321,7 @@
                   id="busan-map"
                   class="h-full w-full"
                   role="group"
-                   aria-label="부산 6개 해역 공식 관측 지도"
+                   aria-label="부산 6개 해역 오늘 모델 위험점수 지도"
                 ></div>
                 <div
                   id="map-error"
@@ -340,10 +340,14 @@
 
                 <div
                   class="map-legend absolute bottom-3 right-3 z-20 flex flex-wrap gap-2 rounded-md border border-slate-200 bg-white/95 px-3 py-2 text-[8px] font-semibold text-slate-600 shadow-lg backdrop-blur"
-                   aria-label="공식 관측자료 범례"
+                   aria-label="오늘 모델 위험점수 범례"
                  >
-                   <span><i class="bg-teal-600"></i>공식 관측 있음</span>
-                   <span><i class="bg-slate-400"></i>자료 없음</span>
+                   <span><i style="background:#14b8a6"></i>안전 0~19</span>
+                   <span><i style="background:#f59e0b"></i>관심 20~39</span>
+                   <span><i style="background:#f97316"></i>주의 40~59</span>
+                   <span><i style="background:#dc2626"></i>경계 60~79</span>
+                   <span><i style="background:#7f1d1d"></i>심각 80~100</span>
+                   <span><i style="background:#94a3b8"></i>자료 없음</span>
                 </div>
               </div>
               <p class="mt-3 flex items-start gap-2 text-[9px] leading-4 text-slate-400">
@@ -641,7 +645,7 @@
                     일별 모델 위험도
                   </h3>
                   <p class="mt-1 text-[9px] text-slate-500">
-                    상세 카드·오늘 요약·막대는 모두 같은 0~100 계산식을 사용합니다.
+                    지도 마커·상세 카드·오늘 요약·막대는 모두 같은 0~100 계산식을 사용합니다.
                   </p>
                 </div>
                 <span class="shrink-0 text-[8px] font-bold text-slate-400">
@@ -794,6 +798,6 @@
     </footer>
 
     <script src="./scripts/config.js"></script>
-    <script type="module" src="./scripts/app.js?v=20260729-unified-v3"></script>
+    <script type="module" src="./scripts/app.js?v=20260729-map-risk-v4"></script>
   </body>
 </html>
