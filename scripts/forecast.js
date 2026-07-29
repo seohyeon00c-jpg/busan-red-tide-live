@@ -1,4 +1,4 @@
-import { calculateDailyForecastRisk } from './risk.js?v=20260729-top-risk-v5';
+import { calculateDailyForecastRisk } from './risk.js?v=20260729-monthly-risk-v6';
 
 export const FORECAST_MODEL_VERSION = '해양 수치예보 결합모형 v0.3';
 

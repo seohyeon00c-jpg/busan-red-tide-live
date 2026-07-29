@@ -41,7 +41,7 @@
 
     <!-- 무료 Lucide 아이콘 CDN을 사용합니다. -->
     <script src="https://unpkg.com/lucide@0.468.0"></script>
-    <link rel="stylesheet" href="./styles.css?v=20260729-top-risk-v5" />
+    <link rel="stylesheet" href="./styles.css?v=20260729-monthly-risk-v6" />
   </head>
   <body class="min-h-screen bg-slate-100 text-slate-900 antialiased">
     <a href="#main-content" class="skip-link">본문으로 바로가기</a>
@@ -669,7 +669,7 @@
           </div>
         </section>
 
-        <!-- 현재 날짜 기준 월간 적조 달력 -->
+        <!-- 과거 해양자료를 같은 계산식으로 재계산한 월간 위험지수 달력 -->
         <section
           id="calendar"
           class="mt-6 scroll-mt-24 rounded-xl border border-slate-200 bg-white p-4 shadow-panel sm:p-5"
@@ -685,7 +685,7 @@
                 월간 적조 달력
               </h2>
               <p class="mt-2 text-xs leading-5 text-slate-500">
-                국립수산과학원에서 실제 적조가 확인된 날짜만 표시합니다.
+                과거 해양자료를 현재와 동일한 계산식에 넣어 날짜별 위험지수를 표시합니다.
               </p>
             </div>
           </div>
@@ -693,27 +693,30 @@
           <div
             id="calendar-notice"
             class="calendar-notice mt-4 flex flex-col gap-2 rounded-lg border px-3 py-2.5 text-[10px] sm:flex-row sm:items-center"
-            data-mode="official"
+            data-mode="model"
           ></div>
 
           <div
             id="calendar-grid"
             class="calendar-grid mt-4"
             role="grid"
-            aria-label="월간 공식 적조 관측 달력"
+            aria-label="월간 부산 적조 모델 위험지수 달력"
           ></div>
 
           <div class="calendar-legend mt-4 flex flex-wrap items-center justify-end gap-x-3 gap-y-2 text-[8px] text-slate-500">
-            <span><i class="calendar-swatch none"></i>기록 없음</span>
-            <span><i class="calendar-swatch official"></i>공식 확인 기록</span>
+            <span><i class="calendar-swatch none"></i>자료 없음</span>
+            <span><i class="calendar-swatch risk-safe"></i>안전 0~19</span>
+            <span><i class="calendar-swatch risk-interest"></i>관심 20~39</span>
+            <span><i class="calendar-swatch risk-caution"></i>주의 40~59</span>
+            <span><i class="calendar-swatch risk-warning"></i>경계 60~79</span>
+            <span><i class="calendar-swatch risk-critical"></i>심각 80~100</span>
           </div>
 
           <div
-            id="no-official-records"
-            class="mt-4 hidden rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-center text-[10px] leading-5 text-slate-500"
+            id="calendar-status"
+            class="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-center text-[10px] leading-5 text-slate-500"
           >
-            이 달에 연결된 공식 적조 관측 기록이 없습니다. 임의 기록은 표시하지
-            않았습니다.
+            현재 월의 과거 해양자료를 불러오고 있습니다.
           </div>
         </section>
 
@@ -798,6 +801,6 @@
     </footer>
 
     <script src="./scripts/config.js"></script>
-    <script type="module" src="./scripts/app.js?v=20260729-top-risk-v5"></script>
+    <script type="module" src="./scripts/app.js?v=20260729-monthly-risk-v6"></script>
   </body>
 </html>

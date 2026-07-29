@@ -4,6 +4,7 @@ const DEFAULT_FORECAST_DAYS = 8;
 const REQUEST_TIMEOUT = 12000;
 
 const forecastCache = new Map();
+const monthlyHistoryCache = new Map();
 
 const isFiniteNumber = (value) => Number.isFinite(Number(value));
 
@@ -155,6 +156,117 @@ export async function fetchMarineForecast(area, options = {}) {
     return await request;
   } catch (error) {
     forecastCache.delete(cacheKey);
+    throw error;
+  }
+}
+
+/**
+ * 부산 여러 좌표의 지정 기간 해양자료를 한 번에 요청합니다.
+ * 과거 날짜는 Open-Meteo가 보관한 수치모델 자료이며 관측값이 아닙니다.
+ */
+export async function fetchMonthlyMarineHistory(areas, options = {}) {
+  const startDate = options.startDate;
+  const endDate = options.endDate;
+
+  if (!Array.isArray(areas) || areas.length === 0) {
+    throw new Error('월간 해양자료를 요청할 해역이 없습니다.');
+  }
+  if (!startDate || !endDate) {
+    throw new Error('월간 해양자료의 시작일과 종료일이 필요합니다.');
+  }
+
+  const cacheKey = [
+    startDate,
+    endDate,
+    ...areas.map((area) => area.id),
+  ].join(':');
+
+  if (!options.skipCache && monthlyHistoryCache.has(cacheKey)) {
+    return monthlyHistoryCache.get(cacheKey);
+  }
+
+  const request = (async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      options.timeout ?? 20000,
+    );
+
+    try {
+      const url = new URL(OPEN_METEO_MARINE_URL);
+      url.searchParams.set(
+        'latitude',
+        areas.map((area) => area.latitude).join(','),
+      );
+      url.searchParams.set(
+        'longitude',
+        areas.map((area) => area.longitude).join(','),
+      );
+      url.searchParams.set(
+        'hourly',
+        [
+          'sea_surface_temperature',
+          'ocean_current_velocity',
+          'wave_height',
+        ].join(','),
+      );
+      url.searchParams.set('timezone', 'Asia/Seoul');
+      url.searchParams.set('start_date', startDate);
+      url.searchParams.set('end_date', endDate);
+      url.searchParams.set('cell_selection', 'sea');
+
+      const fetchImplementation =
+        options.fetchImplementation ?? globalThis.fetch;
+      if (typeof fetchImplementation !== 'function') {
+        throw new Error('월간 해양자료를 요청할 수 없는 실행 환경입니다.');
+      }
+
+      const response = await fetchImplementation(url, {
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        throw new Error(
+          `월간 해양자료 API 응답 오류: HTTP ${response.status}`,
+        );
+      }
+
+      const payload = await response.json();
+      const payloads = Array.isArray(payload) ? payload : [payload];
+      const areaHistories = areas.map((area, index) => ({
+        areaId: area.id,
+        areaName: area.name,
+        days: aggregateHourlyMarineForecast(payloads[index] ?? {}),
+      }));
+
+      if (areaHistories.every((history) => history.days.length === 0)) {
+        throw new Error('부산 좌표에 사용할 수 있는 과거 해양자료가 없습니다.');
+      }
+
+      return {
+        source: 'Open-Meteo Marine API',
+        sourceUrl: 'https://open-meteo.com/en/docs/marine-weather-api',
+        attribution: 'Open-Meteo 과거 해양 수치모델 자료',
+        startDate,
+        endDate,
+        areas: areaHistories,
+        fetchedAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        throw new Error('월간 해양자료 API 요청 시간이 초과되었습니다.');
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  })();
+
+  monthlyHistoryCache.set(cacheKey, request);
+
+  try {
+    return await request;
+  } catch (error) {
+    monthlyHistoryCache.delete(cacheKey);
     throw error;
   }
 }
