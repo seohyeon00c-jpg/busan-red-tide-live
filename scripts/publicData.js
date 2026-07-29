@@ -479,8 +479,11 @@ function mergeKoem(records, areas) {
   let matchedFields = 0;
   const receivedStations = new Set();
   const matchedStations = new Set();
+  const receivedFields = new Set();
 
   records.forEach((record) => {
+    Object.keys(record).forEach((field) => receivedFields.add(field));
+
     const station = pick(record, [
       '정점명',
       '정점',
@@ -565,6 +568,7 @@ function mergeKoem(records, areas) {
     matchedFields,
     matchedStations: [...matchedStations],
     receivedStations: [...receivedStations],
+    receivedFields: [...receivedFields],
   };
 }
 
@@ -807,8 +811,10 @@ export async function loadPublicMarineData(demoAreas, options = {}) {
     koemSource.message =
       merged.matchedFields > 0
         ? `API 연결 · 부산 정점 ${merged.matchedStations.length}곳 환경값 반영`
-        : merged.receivedStations.length > 0
-          ? `API 연결 · 미매칭 정점 ${merged.receivedStations.slice(0, 3).join(', ')}`
+        : merged.matchedStations.length > 0
+          ? `API 연결 · 부산 정점 확인 · 필드 ${merged.receivedFields.slice(0, 6).join(', ')}`
+          : merged.receivedStations.length > 0
+            ? `API 연결 · 미매칭 정점 ${merged.receivedStations.slice(0, 3).join(', ')}`
           : 'API 연결 · 부산 후보 정점 응답 없음';
   } else if (koemResult && !koemResult.ok) {
     koemSource.status = 'unavailable';
