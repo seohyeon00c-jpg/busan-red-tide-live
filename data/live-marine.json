@@ -1,0 +1,289 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-29T03:00:33.022Z",
+  "collector": "github-actions",
+  "mode": "demo",
+  "areas": [
+    {
+      "id": "gijang",
+      "name": "기장",
+      "detail": "대변항 동방 연안",
+      "latitude": 35.2166,
+      "longitude": 129.246,
+      "cellDensity": 128,
+      "organism": "코클로디니움",
+      "waterTemperature": 25.8,
+      "chlorophyllA": 6.8,
+      "salinity": 32.1,
+      "dissolvedOxygen": 6.3,
+      "ph": 8.08,
+      "recentCellGrowth": 35,
+      "riskScore": 70,
+      "riskLevel": "경계",
+      "riskBreakdown": {
+        "cellDensity": 70.34281226642935,
+        "temperature": 100,
+        "chlorophyllA": 56.666666666666664,
+        "salinity": 100,
+        "dissolvedOxygen": 34,
+        "growthTrend": 43.75
+      },
+      "referenceTime": "2026-07-28T14:00:00+09:00",
+      "dataStatus": {
+        "measurements": "demo",
+        "riskIndex": "derived-demo",
+        "officialAlert": "not-connected",
+        "forecast": "demo-forecast",
+        "fields": {
+          "cellDensity": "demo",
+          "organism": "demo",
+          "waterTemperature": "demo",
+          "chlorophyllA": "demo",
+          "salinity": "demo",
+          "dissolvedOxygen": "demo",
+          "ph": "demo"
+        }
+      }
+    },
+    {
+      "id": "haeundae",
+      "name": "해운대",
+      "detail": "미포 남동방 연안",
+      "latitude": 35.1571,
+      "longitude": 129.1776,
+      "cellDensity": 74,
+      "organism": "코클로디니움",
+      "waterTemperature": 26.2,
+      "chlorophyllA": 5.7,
+      "salinity": 31.7,
+      "dissolvedOxygen": 6.7,
+      "ph": 8.11,
+      "recentCellGrowth": 28,
+      "riskScore": 63,
+      "riskLevel": "경계",
+      "riskBreakdown": {
+        "cellDensity": 62.49299984510739,
+        "temperature": 100,
+        "chlorophyllA": 47.5,
+        "salinity": 100,
+        "dissolvedOxygen": 25.999999999999996,
+        "growthTrend": 35
+      },
+      "referenceTime": "2026-07-28T14:00:00+09:00",
+      "dataStatus": {
+        "measurements": "demo",
+        "riskIndex": "derived-demo",
+        "officialAlert": "not-connected",
+        "forecast": "demo-forecast",
+        "fields": {
+          "cellDensity": "demo",
+          "organism": "demo",
+          "waterTemperature": "demo",
+          "chlorophyllA": "demo",
+          "salinity": "demo",
+          "dissolvedOxygen": "demo",
+          "ph": "demo"
+        }
+      }
+    },
+    {
+      "id": "gwangalli",
+      "name": "광안리",
+      "detail": "광안대교 외측",
+      "latitude": 35.1483,
+      "longitude": 129.1258,
+      "cellDensity": 42,
+      "organism": "코클로디니움",
+      "waterTemperature": 26.5,
+      "chlorophyllA": 4.9,
+      "salinity": 31.4,
+      "dissolvedOxygen": 6.9,
+      "ph": 8.12,
+      "recentCellGrowth": 16,
+      "riskScore": 56,
+      "riskLevel": "주의",
+      "riskBreakdown": {
+        "cellDensity": 54.44107130498506,
+        "temperature": 100,
+        "chlorophyllA": 40.833333333333336,
+        "salinity": 100,
+        "dissolvedOxygen": 21.999999999999993,
+        "growthTrend": 20
+      },
+      "referenceTime": "2026-07-28T14:00:00+09:00",
+      "dataStatus": {
+        "measurements": "demo",
+        "riskIndex": "derived-demo",
+        "officialAlert": "not-connected",
+        "forecast": "demo-forecast",
+        "fields": {
+          "cellDensity": "demo",
+          "organism": "demo",
+          "waterTemperature": "demo",
+          "chlorophyllA": "demo",
+          "salinity": "demo",
+          "dissolvedOxygen": "demo",
+          "ph": "demo"
+        }
+      }
+    },
+    {
+      "id": "yeongdo",
+      "name": "영도",
+      "detail": "태종대 남방 연안",
+      "latitude": 35.0527,
+      "longitude": 129.0874,
+      "cellDensity": 19,
+      "organism": "코클로디니움",
+      "waterTemperature": 25.3,
+      "chlorophyllA": 4.2,
+      "salinity": 32.4,
+      "dissolvedOxygen": 7.2,
+      "ph": 8.14,
+      "recentCellGrowth": 9,
+      "riskScore": 49,
+      "riskLevel": "주의",
+      "riskBreakdown": {
+        "cellDensity": 43.36139245415396,
+        "temperature": 100,
+        "chlorophyllA": 35,
+        "salinity": 100,
+        "dissolvedOxygen": 15.999999999999998,
+        "growthTrend": 11.25
+      },
+      "referenceTime": "2026-07-28T14:00:00+09:00",
+      "dataStatus": {
+        "measurements": "demo",
+        "riskIndex": "derived-demo",
+        "officialAlert": "not-connected",
+        "forecast": "demo-forecast",
+        "fields": {
+          "cellDensity": "demo",
+          "organism": "demo",
+          "waterTemperature": "demo",
+          "chlorophyllA": "demo",
+          "salinity": "demo",
+          "dissolvedOxygen": "demo",
+          "ph": "demo"
+        }
+      }
+    },
+    {
+      "id": "dadaepo",
+      "name": "다대포",
+      "detail": "다대포항 외측",
+      "latitude": 35.0358,
+      "longitude": 128.9631,
+      "cellDensity": 8,
+      "organism": "규조류 우점",
+      "waterTemperature": 24.9,
+      "chlorophyllA": 3.3,
+      "salinity": 30.8,
+      "dissolvedOxygen": 7.5,
+      "ph": 8.16,
+      "recentCellGrowth": 4,
+      "riskScore": 42,
+      "riskLevel": "주의",
+      "riskBreakdown": {
+        "cellDensity": 31.803481922888615,
+        "temperature": 100,
+        "chlorophyllA": 27.499999999999996,
+        "salinity": 100,
+        "dissolvedOxygen": 10,
+        "growthTrend": 5
+      },
+      "referenceTime": "2026-07-28T14:00:00+09:00",
+      "dataStatus": {
+        "measurements": "demo",
+        "riskIndex": "derived-demo",
+        "officialAlert": "not-connected",
+        "forecast": "demo-forecast",
+        "fields": {
+          "cellDensity": "demo",
+          "organism": "demo",
+          "waterTemperature": "demo",
+          "chlorophyllA": "demo",
+          "salinity": "demo",
+          "dissolvedOxygen": "demo",
+          "ph": "demo"
+        }
+      }
+    },
+    {
+      "id": "gadeokdo",
+      "name": "가덕도",
+      "detail": "대항항 남동방",
+      "latitude": 35.0026,
+      "longitude": 128.8315,
+      "cellDensity": 3,
+      "organism": "미동정 혼합종",
+      "waterTemperature": 24.4,
+      "chlorophyllA": 2.6,
+      "salinity": 31.2,
+      "dissolvedOxygen": 7.8,
+      "ph": 8.18,
+      "recentCellGrowth": -3,
+      "riskScore": 35,
+      "riskLevel": "관심",
+      "riskBreakdown": {
+        "cellDensity": 20.065763012322414,
+        "temperature": 100,
+        "chlorophyllA": 21.666666666666668,
+        "salinity": 100,
+        "dissolvedOxygen": 4.0000000000000036,
+        "growthTrend": 0
+      },
+      "referenceTime": "2026-07-28T14:00:00+09:00",
+      "dataStatus": {
+        "measurements": "demo",
+        "riskIndex": "derived-demo",
+        "officialAlert": "not-connected",
+        "forecast": "demo-forecast",
+        "fields": {
+          "cellDensity": "demo",
+          "organism": "demo",
+          "waterTemperature": "demo",
+          "chlorophyllA": "demo",
+          "salinity": "demo",
+          "dissolvedOxygen": "demo",
+          "ph": "demo"
+        }
+      }
+    }
+  ],
+  "sources": [
+    {
+      "id": "nifs",
+      "agency": "국립수산과학원",
+      "dataset": "적조정보 · 실시간 해양수산환경",
+      "status": "connected",
+      "message": "API 연결 · 기간 내 부산 매칭 자료 없음"
+    },
+    {
+      "id": "khoa",
+      "agency": "국립해양조사원",
+      "dataset": "해양관측 국가중점데이터",
+      "status": "ready",
+      "message": "기존 최신관측 API 폐기 · 대체서비스 검토 중"
+    },
+    {
+      "id": "koem",
+      "agency": "해양환경공단",
+      "dataset": "해양환경측정망",
+      "status": "unavailable",
+      "message": "연결 실패 · 관련 지표는 예시값 유지"
+    },
+    {
+      "id": "map",
+      "agency": "사용자 제공 이미지",
+      "dataset": "부산 행정구역 PNG 지도",
+      "status": "connected",
+      "message": "로컬 이미지 · 외부 지도 타일 호출 없음"
+    }
+  ],
+  "warnings": [
+    "공공 관측값이 반영되지 않아 모든 해양 수치는 예시 데이터입니다.",
+    "KOEM 연결 실패: 요청 시간 초과"
+  ],
+  "officialObservations": []
+}
