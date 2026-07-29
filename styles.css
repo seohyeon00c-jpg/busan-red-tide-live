@@ -752,6 +752,41 @@ body {
 }
 
 /* 공공데이터 연결 상태와 필드별 출처를 같은 색 체계로 표시합니다. */
+#header-system-status[data-mode='official'] {
+  color: #5eead4;
+  background: rgba(20, 184, 166, 0.1);
+  border-color: rgba(45, 212, 191, 0.2);
+}
+
+#header-system-status[data-mode='official'] > span {
+  background: #5eead4;
+}
+
+#system-mode-banner[data-mode='official'] {
+  color: #115e59;
+  background: #f0fdfa;
+  border-color: #99f6e4;
+}
+
+#source-mode-badge[data-mode='official'] {
+  color: #99f6e4;
+  background: rgba(20, 184, 166, 0.12);
+  border-color: rgba(94, 234, 212, 0.22);
+}
+
+[data-mode='official'],
+[data-mode='observed'] {
+  color: #0f766e;
+  background-color: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+[data-mode='unavailable'] {
+  color: #475569;
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+}
+
 #header-system-status[data-mode='hybrid'] {
   color: #5eead4;
   background: rgba(20, 184, 166, 0.1);
@@ -796,6 +831,12 @@ body {
   color: #0369a1;
   background: #f0f9ff;
   border-color: #bae6fd;
+}
+
+.metric-source[data-source='unavailable'] {
+  color: #64748b;
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
 .metric-card {
