@@ -211,8 +211,7 @@ function renderSystemState() {
 
 function renderDataSources() {
   const container = document.querySelector('#data-source-grid');
-  const warningList = document.querySelector('#data-warning-list');
-  if (!container || !warningList) return;
+  if (!container) return;
 
   const displayedSources = [
     ...dashboardState.sources,
@@ -250,16 +249,6 @@ function renderDataSources() {
     })
     .join('');
 
-  warningList.innerHTML = dashboardState.warnings
-    .map(
-      (warning) => `
-        <div class="flex items-start gap-2 rounded-md border border-amber-300/10 bg-amber-300/[0.055] px-3 py-2 text-[9px] leading-4 text-amber-100/70">
-          <i data-lucide="info" class="mt-0.5 h-3.5 w-3.5 shrink-0"></i>
-          <span>${escapeHtml(warning)}</span>
-        </div>
-      `,
-    )
-    .join('');
 }
 
 function initializeMobileNavigation() {
