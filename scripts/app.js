@@ -20,6 +20,35 @@ let selectedAreaId = activeAreas[0]?.id;
 let mapController;
 let forecastRequestId = 0;
 
+const dashboardPages = {
+  monitoring: {
+    title: '해역 위험 모니터링',
+    defaultHash: '#monitoring',
+    sectionIds: ['monitoring', 'analysis', 'forecast', 'calendar', 'area-data'],
+  },
+  data: {
+    title: '데이터·산정 정보',
+    defaultHash: '#system-mode-banner',
+    sectionIds: [
+      'system-mode-banner',
+      'summary-grid',
+      'risk-methodology',
+      'sources',
+      'official-data-policy',
+    ],
+  },
+};
+
+const sectionPageMap = Object.entries(dashboardPages).reduce(
+  (map, [pageId, page]) => {
+    page.sectionIds.forEach((sectionId) => {
+      map.set(sectionId, pageId);
+    });
+    return map;
+  },
+  new Map(),
+);
+
 function getObservedFieldCount(area) {
   return Object.values(area.dataStatus?.fields ?? {}).filter(
     (status) => status === 'observed',
@@ -251,6 +280,91 @@ function renderDataSources() {
 
 }
 
+function initializePageNavigation() {
+  const content = document.querySelector('#main-content > div');
+  if (!content) return;
+
+  const shells = new Map();
+
+  Object.entries(dashboardPages).forEach(([pageId, page]) => {
+    const shell = document.createElement('div');
+    shell.id = `dashboard-page-${pageId}`;
+    shell.dataset.dashboardPage = pageId;
+    shell.setAttribute('role', 'region');
+    shell.setAttribute('aria-label', page.title);
+
+    page.sectionIds.forEach((sectionId) => {
+      const section = document.getElementById(sectionId);
+      if (section) shell.appendChild(section);
+    });
+
+    content.appendChild(shell);
+    shells.set(pageId, shell);
+  });
+
+  const title = document.querySelector('#current-page-title');
+  const pageLinks = document.querySelectorAll('[data-page-link]');
+
+  const getPageFromHash = () => {
+    const sectionId = decodeURIComponent(window.location.hash.replace('#', ''));
+    return sectionPageMap.get(sectionId) ?? 'monitoring';
+  };
+
+  const setActivePage = (pageId, options = {}) => {
+    const nextPageId = dashboardPages[pageId] ? pageId : 'monitoring';
+
+    shells.forEach((shell, shellPageId) => {
+      shell.hidden = shellPageId !== nextPageId;
+    });
+
+    if (title) title.textContent = dashboardPages[nextPageId].title;
+
+    pageLinks.forEach((link) => {
+      const isCurrent = link.dataset.pageLink === nextPageId;
+      if (isCurrent) {
+        link.setAttribute('aria-current', 'page');
+      } else {
+        link.removeAttribute('aria-current');
+      }
+    });
+
+    if (options.hash) {
+      history.pushState(null, '', options.hash);
+    }
+  };
+
+  document.addEventListener('click', (event) => {
+    const clickedElement =
+      event.target instanceof Element ? event.target : event.target.parentElement;
+    const link = clickedElement?.closest('a[href^="#"]');
+    if (!link) return;
+
+    const hash = link.getAttribute('href');
+    const sectionId = decodeURIComponent(hash.replace('#', ''));
+    const pageId = link.dataset.pageLink ?? sectionPageMap.get(sectionId);
+    if (!pageId) return;
+
+    event.preventDefault();
+    const targetHash =
+      hash === '#overview' ? dashboardPages.monitoring.defaultHash : hash;
+    setActivePage(pageId, { hash: targetHash });
+
+    const target = document.querySelector(targetHash);
+    if (target) {
+      target.scrollIntoView({ block: 'start' });
+    }
+  });
+
+  const syncPageFromHash = () => {
+    setActivePage(getPageFromHash());
+  };
+
+  window.addEventListener('popstate', syncPageFromHash);
+  window.addEventListener('hashchange', syncPageFromHash);
+
+  setActivePage(getPageFromHash());
+}
+
 function initializeMobileNavigation() {
   const button = document.querySelector('#mobile-menu-button');
   const navigation = document.querySelector('#mobile-navigation');
@@ -260,7 +374,7 @@ function initializeMobileNavigation() {
     button.setAttribute('aria-expanded', String(open));
     button.setAttribute(
       'aria-label',
-      open ? '모바일 메뉴 닫기' : '모바일 메뉴 열기',
+      open ? '페이지 메뉴 닫기' : '페이지 메뉴 열기',
     );
     button.innerHTML = `
       <i data-lucide="${open ? 'x' : 'menu'}" class="h-5 w-5"></i>
@@ -289,10 +403,6 @@ function initializeMobileNavigation() {
       setOpen(false);
       button.focus();
     }
-  });
-
-  window.matchMedia('(min-width: 1024px)').addEventListener('change', (event) => {
-    if (event.matches) setOpen(false);
   });
 
   setOpen(false);
@@ -874,6 +984,7 @@ function renderAreas() {
 }
 
 async function initializeApp() {
+  initializePageNavigation();
   initializeMobileNavigation();
   initializeMetricHelp();
   renderToday();
