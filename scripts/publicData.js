@@ -806,13 +806,18 @@ export async function loadPublicMarineData(demoAreas, options = {}) {
   const koemSource = sources.find((source) => source.id === 'koem');
   if (koemResult?.ok) {
     const merged = mergeKoem(koemResult.records, areas);
+    const measurementFields = merged.receivedFields.filter((field) =>
+      /temp|wtem|wtr|sal|ph|dox|oxy|chlor|chl|수온|염분|용존|클로로필/i.test(
+        field,
+      ),
+    );
     observedFieldCount += merged.matchedFields;
     koemSource.status = 'connected';
     koemSource.message =
       merged.matchedFields > 0
         ? `API 연결 · 부산 정점 ${merged.matchedStations.length}곳 환경값 반영`
         : merged.matchedStations.length > 0
-          ? `API 연결 · 부산 정점 확인 · 필드 ${merged.receivedFields.slice(0, 6).join(', ')}`
+          ? `API 연결 · 부산 정점 확인 · 필드 ${(measurementFields.length > 0 ? measurementFields : merged.receivedFields.slice(6, 30)).join(', ')}`
           : merged.receivedStations.length > 0
             ? `API 연결 · 미매칭 정점 ${merged.receivedStations.slice(0, 3).join(', ')}`
           : 'API 연결 · 부산 후보 정점 응답 없음';
