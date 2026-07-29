@@ -12,6 +12,13 @@ export const RISK_WEIGHTS = Object.freeze({
   growthTrend: 0.15,
 });
 
+export const ENVIRONMENT_FORECAST_WEIGHTS = Object.freeze({
+  temperature: 0.4,
+  chlorophyllA: 0.25,
+  salinity: 0.2,
+  dissolvedOxygen: 0.15,
+});
+
 const clamp = (value, minimum = 0, maximum = 100) =>
   Math.min(maximum, Math.max(minimum, value));
 
@@ -93,6 +100,87 @@ export function calculateRisk(measurements) {
     score,
     level: getRiskLevel(score),
     breakdown,
+  };
+}
+
+/**
+ * 공식 환경 관측값만 조합한 0~100 파생지수입니다.
+ * 세포밀도·증가추세를 포함하지 않으므로 적조 발생확률이나 공식 위험도가 아닙니다.
+ */
+export function calculateEnvironmentalRisk(measurements) {
+  const factors = {
+    temperature: {
+      field: 'waterTemperature',
+      score: getTemperatureSuitability(measurements.waterTemperature),
+    },
+    chlorophyllA: {
+      field: 'chlorophyllA',
+      score: getChlorophyllScore(measurements.chlorophyllA),
+    },
+    salinity: {
+      field: 'salinity',
+      score: getSalinityScore(measurements.salinity),
+    },
+    dissolvedOxygen: {
+      field: 'dissolvedOxygen',
+      score: getDissolvedOxygenRisk(measurements.dissolvedOxygen),
+    },
+  };
+
+  const availableFactors = Object.entries(factors).filter(
+    ([, factor]) =>
+      measurements.dataStatus?.fields?.[factor.field] === 'observed' &&
+      Number.isFinite(measurements[factor.field]),
+  );
+  const availableWeight = availableFactors.reduce(
+    (total, [key]) => total + ENVIRONMENT_FORECAST_WEIGHTS[key],
+    0,
+  );
+
+  if (availableFactors.length < 2 || availableWeight === 0) {
+    return {
+      available: false,
+      score: null,
+      level: '산정 불가',
+      inputCount: availableFactors.length,
+      completeness: Math.round(
+        (availableFactors.length / Object.keys(factors).length) * 100,
+      ),
+      breakdown: Object.fromEntries(
+        Object.entries(factors).map(([key, factor]) => [
+          key,
+          Number.isFinite(measurements[factor.field])
+            ? factor.score
+            : null,
+        ]),
+      ),
+    };
+  }
+
+  const score = Math.round(
+    availableFactors.reduce(
+      (total, [key, factor]) =>
+        total + factor.score * ENVIRONMENT_FORECAST_WEIGHTS[key],
+      0,
+    ) / availableWeight,
+  );
+
+  return {
+    available: true,
+    score,
+    level: getRiskLevel(score),
+    inputCount: availableFactors.length,
+    completeness: Math.round(
+      (availableFactors.length / Object.keys(factors).length) * 100,
+    ),
+    breakdown: Object.fromEntries(
+      Object.entries(factors).map(([key, factor]) => [
+        key,
+        measurements.dataStatus?.fields?.[factor.field] === 'observed'
+          ? Math.round(factor.score)
+          : null,
+      ]),
+    ),
   };
 }
 
