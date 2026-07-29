@@ -61,7 +61,7 @@ DATA_GO_KR_KEY
 
 `.github/workflows/collect-public-data.yml`이 3시간마다 다음 작업을 수행합니다.
 
-1. GitHub Secrets를 이용해 NIFS·KOEM API를 호출합니다.
+1. GitHub Secrets를 이용해 NIFS·KOEM·부산시 해양환경측정망 API를 호출합니다.
 2. 인증키가 포함되지 않은 `data/live-marine.json`만 생성합니다.
 3. GitHub Pages 소스 브랜치에 공개 캐시를 커밋합니다.
 4. GitHub Pages 재배포를 요청합니다.
@@ -103,6 +103,14 @@ window.APP_CONFIG = Object.freeze({
 
 - 해양환경측정망: `https://apis.data.go.kr/B553931/service/OceansNemoService2/getOceansNemo2`
 - 활용 항목: Chl-a, pH, DO, 수온, 염분
+
+### 부산광역시 보건환경연구원
+
+- 부산 해양환경 측정망 API: `https://apis.data.go.kr/6260000/BusanMrnEnvrnInfoService/getMrnEnvrnInfo`
+- 활용 항목: 해운대·광안리 정점의 Chl-a, pH, DO, 수온, 염분
+- 최신 분기 API 응답을 우선 사용합니다.
+- API가 승인되지 않았거나 응답에 해당 정점이 없으면 부산시 「2024년 해양환경측정망」 보고서의 연평균 공식값을 사용하고 화면에 `2024년 연평균`이라고 표시합니다.
+- 부산시 자료에는 적조 생물 세포밀도와 자체 위험지수가 없으므로 해당 항목은 임의 계산하지 않고 `자료 없음`으로 유지합니다.
 
 ### 지도
 

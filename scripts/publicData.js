@@ -1,6 +1,8 @@
 const NIFS_BASE_URL = 'https://www.nifs.go.kr/OpenAPI_json';
 const KOEM_URL =
   'https://apis.data.go.kr/B553931/service/OceansNemoService2/getOceansNemo2';
+const BUSAN_MARINE_URL =
+  'https://apis.data.go.kr/6260000/BusanMrnEnvrnInfoService/getMrnEnvrnInfo';
 const REQUEST_TIMEOUT = 8000;
 const KOEM_REQUEST_TIMEOUT = 30000;
 const PUBLIC_CACHE_URL = './data/live-marine.json';
@@ -42,6 +44,32 @@ const KOEM_BUSAN_STATIONS = [
   '신호',
   '가덕대교',
 ];
+
+const BUSAN_STATION_PRIORITY = {
+  haeundae: ['해운대', '해운대해수욕장'],
+  gwangalli: ['광안리해수욕장', '민락동', '수영만', '이기대'],
+};
+
+// 부산광역시 보건환경연구원 「2024년 해양환경측정망」 연평균 공식값입니다.
+// API가 승인되지 않았거나 최신 응답이 없을 때에만 과거 자료임을 표시하고 사용합니다.
+const BUSAN_2024_OFFICIAL_AVERAGES = {
+  haeundae: {
+    station: '해운대',
+    waterTemperature: 18.32,
+    chlorophyllA: 0.49,
+    salinity: 32.65,
+    dissolvedOxygen: 7.15,
+    ph: 8.06,
+  },
+  gwangalli: {
+    station: '광안리해수욕장',
+    waterTemperature: 17.9,
+    chlorophyllA: 0.78,
+    salinity: 33.9,
+    dissolvedOxygen: 7.35,
+    ph: 7.76,
+  },
+};
 
 const getConfig = () =>
   typeof window === 'undefined' ? {} : (window.APP_CONFIG ?? {});
@@ -274,6 +302,11 @@ function updateNumberField(area, field, value) {
   return true;
 }
 
+function updateNumberFieldIfMissing(area, field, value) {
+  if (area.dataStatus.fields[field] === 'observed') return false;
+  return updateNumberField(area, field, value);
+}
+
 export async function fetchNifsRedTide(
   startDate,
   endDate,
@@ -346,6 +379,25 @@ export async function fetchKoemMeasurements(options = {}) {
   }
 
   return successfulResults.flatMap((result) => result.value);
+}
+
+export async function fetchBusanMarineMeasurements(options = {}) {
+  const key = options.key ?? getConfig().DATA_GO_KR_KEY?.trim();
+  if (!key) throw new Error('공공데이터포털 API 키가 설정되지 않았습니다.');
+
+  const url = new URL(BUSAN_MARINE_URL);
+  url.searchParams.set('ServiceKey', normalizeDataGoKrKey(key));
+  url.searchParams.set('pageNo', '1');
+  url.searchParams.set('numOfRows', '1000');
+  url.searchParams.set('resultType', 'json');
+
+  return findRecordArray(
+    await fetchJson(
+      url,
+      options.fetchImplementation,
+      options.timeout ?? KOEM_REQUEST_TIMEOUT,
+    ),
+  );
 }
 
 function mergeNifsRedTide(records, areas) {
@@ -594,6 +646,122 @@ function mergeKoem(records, areas) {
   };
 }
 
+function getBusanInspectionKey(record) {
+  const year = asNumber(pick(record, ['inspecYy', 'INSPEC_YY'])) ?? 0;
+  const quarter = asNumber(pick(record, ['inspecQt', 'INSPEC_QT'])) ?? 0;
+  return year * 10 + quarter;
+}
+
+function mergeBusanMarine(records, areas) {
+  let matchedFields = 0;
+  const matchedStations = [];
+
+  Object.entries(BUSAN_STATION_PRIORITY).forEach(
+    ([areaId, stationPriority]) => {
+      const area = areas.find((candidate) => candidate.id === areaId);
+      if (!area) return;
+
+      const candidates = records
+        .map((record) => ({
+          record,
+          station: asText(pick(record, ['site', 'SITE', 'stationName'])),
+        }))
+        .filter(
+          ({ station }) => station && matchArea(station, [area])?.id === areaId,
+        )
+        .sort((a, b) => {
+          const dateDifference =
+            getBusanInspectionKey(b.record) -
+            getBusanInspectionKey(a.record);
+          if (dateDifference !== 0) return dateDifference;
+
+          const aPriority = stationPriority.indexOf(a.station);
+          const bPriority = stationPriority.indexOf(b.station);
+          return (
+            (aPriority < 0 ? Number.MAX_SAFE_INTEGER : aPriority) -
+            (bPriority < 0 ? Number.MAX_SAFE_INTEGER : bPriority)
+          );
+        });
+
+      const selected = candidates[0];
+      if (!selected) return;
+
+      const fields = {
+        chlorophyllA: asNumber(
+          pick(selected.record, ['water05', 'WATER05']),
+        ),
+        ph: asNumber(pick(selected.record, ['water08', 'WATER08'])),
+        dissolvedOxygen: asNumber(
+          pick(selected.record, ['water13', 'WATER13']),
+        ),
+        waterTemperature: asNumber(
+          pick(selected.record, ['water14', 'WATER14']),
+        ),
+        salinity: asNumber(
+          pick(selected.record, ['water16', 'WATER16']),
+        ),
+      };
+
+      let areaMatchedFields = 0;
+      Object.entries(fields).forEach(([field, value]) => {
+        if (updateNumberFieldIfMissing(area, field, value)) {
+          matchedFields += 1;
+          areaMatchedFields += 1;
+        }
+      });
+
+      if (areaMatchedFields > 0) {
+        const year = asText(
+          pick(selected.record, ['inspecYy', 'INSPEC_YY']),
+        );
+        const quarter = asText(
+          pick(selected.record, ['inspecQt', 'INSPEC_QT']),
+        );
+        area.referenceTime =
+          year && quarter
+            ? `${year}년 ${quarter}분기 · 부산시 ${selected.station} 정점`
+            : `부산시 ${selected.station} 정점 · 관측시기 미제공`;
+        matchedStations.push(selected.station);
+      }
+    },
+  );
+
+  return { matchedFields, matchedStations };
+}
+
+function applyBusanHistoricalFallback(areas) {
+  let matchedFields = 0;
+  const matchedStations = [];
+
+  Object.entries(BUSAN_2024_OFFICIAL_AVERAGES).forEach(
+    ([areaId, officialAverage]) => {
+      const area = areas.find((candidate) => candidate.id === areaId);
+      if (!area) return;
+
+      const hasCurrentEnvironmentalValue = [
+        'waterTemperature',
+        'chlorophyllA',
+        'salinity',
+        'dissolvedOxygen',
+        'ph',
+      ].some((field) => area.dataStatus.fields[field] === 'observed');
+      if (hasCurrentEnvironmentalValue) return;
+
+      Object.entries(officialAverage).forEach(([field, value]) => {
+        if (field === 'station') return;
+        if (updateNumberFieldIfMissing(area, field, value)) {
+          matchedFields += 1;
+        }
+      });
+      area.referenceTime =
+        `2024년 연평균 · 부산시 ${officialAverage.station} 정점`;
+      matchedStations.push(officialAverage.station);
+    },
+  );
+
+  return { matchedFields, matchedStations };
+}
+
 function describeError(error) {
   if (error?.name === 'AbortError') return '요청 시간 초과';
   if (error instanceof TypeError) return '브라우저 CORS 또는 네트워크 오류';
@@ -626,6 +794,15 @@ function createDefaultSources(config) {
       message: config.DATA_GO_KR_KEY
         ? '연결 확인 중'
         : '공개 데이터 캐시 없음 · 자료 없음으로 표시',
+    },
+    {
+      id: 'busan',
+      agency: '부산광역시 보건환경연구원',
+      dataset: '부산 해양환경측정망',
+      status: 'ready',
+      message: config.DATA_GO_KR_KEY
+        ? '최신 분기 API 연결 확인 중'
+        : 'API 미연결 · 2024년 공식 연평균 자료 사용',
     },
     {
       id: 'map',
@@ -794,14 +971,23 @@ export async function loadPublicMarineData(baseAreas, options = {}) {
   }
 
   if (config.DATA_GO_KR_KEY?.trim()) {
-    operations.push({
-      id: 'koem',
-      request: fetchKoemMeasurements({
-        key: config.DATA_GO_KR_KEY.trim(),
-        fetchImplementation,
-        endDate: now,
-      }),
-    });
+    operations.push(
+      {
+        id: 'koem',
+        request: fetchKoemMeasurements({
+          key: config.DATA_GO_KR_KEY.trim(),
+          fetchImplementation,
+          endDate: now,
+        }),
+      },
+      {
+        id: 'busan-marine',
+        request: fetchBusanMarineMeasurements({
+          key: config.DATA_GO_KR_KEY.trim(),
+          fetchImplementation,
+        }),
+      },
+    );
 
   }
 
@@ -869,6 +1055,39 @@ export async function loadPublicMarineData(baseAreas, options = {}) {
     koemSource.status = 'unavailable';
     koemSource.message = '연결 실패 · 관련 항목은 자료 없음';
     warnings.push(`KOEM 연결 실패: ${describeError(koemResult.error)}`);
+  }
+
+  const busanResult = resultById.get('busan-marine');
+  const busanSource = sources.find((source) => source.id === 'busan');
+  let busanMerged = { matchedFields: 0, matchedStations: [] };
+
+  if (busanResult?.ok) {
+    busanMerged = mergeBusanMarine(busanResult.records, areas);
+    observedFieldCount += busanMerged.matchedFields;
+  }
+
+  if (busanMerged.matchedFields > 0) {
+    busanSource.status = 'connected';
+    busanSource.message =
+      `API 연결 · ${busanMerged.matchedStations.join(', ')} 최신 분기값 반영`;
+  } else {
+    const historical = applyBusanHistoricalFallback(areas);
+    observedFieldCount += historical.matchedFields;
+
+    if (historical.matchedFields > 0) {
+      busanSource.status = 'connected';
+      busanSource.message =
+        '2024년 공식 연평균 자료 반영 · 실시간 자료 아님';
+      warnings.push(
+        '해운대·광안리는 부산시 2024년 공식 연평균 자료이며 실시간 값이 아닙니다.',
+      );
+    }
+  }
+
+  if (busanResult && !busanResult.ok) {
+    warnings.push(
+      `부산시 해양환경측정망 API 연결 실패: ${describeError(busanResult.error)}`,
+    );
   }
 
   const uniqueOfficialObservations = [
