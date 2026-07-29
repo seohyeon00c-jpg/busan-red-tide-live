@@ -9,13 +9,32 @@ const PUBLIC_CACHE_URL = './data/live-marine.json';
 const PUBLIC_CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
 
 const AREA_ALIASES = {
-  gijang: ['기장', '대변', '일광'],
-  haeundae: ['해운대', '미포', '송정'],
-  gwangalli: ['광안', '수영만', '수영'],
-  yeongdo: ['영도', '태종대', '부산항', '남항'],
-  dadaepo: ['다대포', '다대', '낙동강하구'],
-  gadeokdo: ['가덕도', '가덕', '대항', '진해만'],
+  gijang: ['기장', '대변', '일광', '고리'],
+  haeundae: ['해운대', '해운대해수욕장', '미포', '송정'],
+  gwangalli: ['광안', '광안리', '민락', '수영만', '수영', '이기대'],
+  yeongdo: ['영도', '태종대', '부산항', '남항', '북내항', '5부두'],
+  dadaepo: ['다대포', '다대포항', '다대포어시장', '다대', '장림', '낙동강하구'],
+  gadeokdo: ['가덕도', '가덕', '가덕대교', '대항', '신항', '신외항', '녹산', '신호', '진해만'],
 };
+
+const KOEM_BUSAN_STATIONS = [
+  '고리',
+  '대변',
+  '해운대해수욕장',
+  '광안리',
+  '민락동',
+  '남항',
+  '북내항',
+  '5부두',
+  '다대포항',
+  '다대포어시장',
+  '장림',
+  '신항',
+  '신외항',
+  '녹산',
+  '신호',
+  '가덕대교',
+];
 
 const getConfig = () =>
   typeof window === 'undefined' ? {} : (window.APP_CONFIG ?? {});
@@ -293,25 +312,40 @@ export async function fetchKoemMeasurements(options = {}) {
 
   const endDate = options.endDate ?? new Date();
   const startDate = new Date(endDate);
-  startDate.setDate(startDate.getDate() - (options.lookbackDays ?? 180));
+  startDate.setDate(startDate.getDate() - (options.lookbackDays ?? 550));
+  const stationNames = options.stationNames ?? KOEM_BUSAN_STATIONS;
 
-  const url = new URL(KOEM_URL);
-  url.searchParams.set('serviceKey', normalizeDataGoKrKey(key));
-  url.searchParams.set('pageNo', '1');
-  url.searchParams.set('numOfRows', '100');
-  url.searchParams.set('resultType', 'xml');
-  url.searchParams.set('_type', 'xml');
-  url.searchParams.set('sdate', formatDate(startDate));
-  url.searchParams.set('edate', formatDate(endDate));
-  url.searchParams.set('OCEAN_NM', '남해');
+  const results = await Promise.allSettled(
+    stationNames.map(async (stationName) => {
+      const url = new URL(KOEM_URL);
+      url.searchParams.set('serviceKey', normalizeDataGoKrKey(key));
+      url.searchParams.set('pageNo', '1');
+      url.searchParams.set('numOfRows', '10');
+      url.searchParams.set('resultType', 'xml');
+      url.searchParams.set('_type', 'xml');
+      url.searchParams.set('sdate', formatDate(startDate));
+      url.searchParams.set('edate', formatDate(endDate));
+      url.searchParams.set('OCEAN_NM', '남해');
+      url.searchParams.set('STNPNT_KOREAN_NM', stationName);
 
-  return findRecordArray(
-    await fetchJson(
-      url,
-      options.fetchImplementation,
-      options.timeout ?? KOEM_REQUEST_TIMEOUT,
-    ),
+      return findRecordArray(
+        await fetchJson(
+          url,
+          options.fetchImplementation,
+          options.timeout ?? KOEM_REQUEST_TIMEOUT,
+        ),
+      );
+    }),
   );
+
+  const successfulResults = results.filter(
+    (result) => result.status === 'fulfilled',
+  );
+  if (successfulResults.length === 0) {
+    throw results[0]?.reason ?? new Error('KOEM 부산 정점 요청에 실패했습니다.');
+  }
+
+  return successfulResults.flatMap((result) => result.value);
 }
 
 function mergeNifsRedTide(records, areas) {
@@ -443,6 +477,8 @@ function mergeNifsRisa(records, areas) {
 
 function mergeKoem(records, areas) {
   let matchedFields = 0;
+  const receivedStations = new Set();
+  const matchedStations = new Set();
 
   records.forEach((record) => {
     const station = pick(record, [
@@ -457,8 +493,12 @@ function mergeKoem(records, areas) {
       'stationName',
       'staNm',
     ]);
+    const stationName = asText(station);
+    if (stationName) receivedStations.add(stationName);
+
     const area = matchArea(station, areas);
     if (!area) return;
+    matchedStations.add(stationName);
 
     const fields = {
       chlorophyllA: asNumber(
@@ -521,7 +561,11 @@ function mergeKoem(records, areas) {
     if (observedAt) area.referenceTime = observedAt;
   });
 
-  return matchedFields;
+  return {
+    matchedFields,
+    matchedStations: [...matchedStations],
+    receivedStations: [...receivedStations],
+  };
 }
 
 function describeError(error) {
@@ -757,13 +801,15 @@ export async function loadPublicMarineData(demoAreas, options = {}) {
   const koemResult = resultById.get('koem');
   const koemSource = sources.find((source) => source.id === 'koem');
   if (koemResult?.ok) {
-    const matched = mergeKoem(koemResult.records, areas);
-    observedFieldCount += matched;
+    const merged = mergeKoem(koemResult.records, areas);
+    observedFieldCount += merged.matchedFields;
     koemSource.status = 'connected';
     koemSource.message =
-      matched > 0
-        ? 'API 연결 · 부산 매칭 환경값 반영'
-        : 'API 연결 · 부산 해역 정점 매칭 필요';
+      merged.matchedFields > 0
+        ? `API 연결 · 부산 정점 ${merged.matchedStations.length}곳 환경값 반영`
+        : merged.receivedStations.length > 0
+          ? `API 연결 · 미매칭 정점 ${merged.receivedStations.slice(0, 3).join(', ')}`
+          : 'API 연결 · 부산 후보 정점 응답 없음';
   } else if (koemResult && !koemResult.ok) {
     koemSource.status = 'unavailable';
     koemSource.message = '연결 실패 · 관련 지표는 예시값 유지';
