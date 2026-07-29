@@ -247,7 +247,7 @@
           class="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 sm:flex-row sm:items-center sm:justify-between"
           data-mode="loading"
           aria-live="polite"
-          aria-label="시연모드 안내"
+          aria-label="데이터 상태 안내"
         >
           <div class="flex items-start gap-3">
             <i data-lucide="triangle-alert" class="mt-0.5 h-5 w-5 shrink-0 text-amber-600"></i>
@@ -499,7 +499,7 @@
             <div class="rounded bg-white/[0.035] px-3 py-3">
               <i data-lucide="database" class="mx-auto h-5 w-5 text-teal-300"></i>
               <strong class="mt-2 block text-[10px]">1. 공공 관측자료</strong>
-              <small class="mt-1 block text-[8px] text-slate-500">NIFS · KHOA · KOEM</small>
+              <small class="mt-1 block text-[8px] text-slate-500">NIFS · KOEM · KHOA 대체자료 검토</small>
             </div>
             <div class="rounded bg-white/[0.035] px-3 py-3">
               <i data-lucide="git-merge" class="mx-auto h-5 w-5 text-teal-300"></i>
@@ -527,8 +527,8 @@
           <div class="mt-4 flex items-start gap-2 border-t border-white/10 pt-4 text-[9px] leading-5 text-slate-500">
             <i data-lucide="key-round" class="mt-0.5 h-3.5 w-3.5 shrink-0"></i>
             <p>
-              정적 프로토타입에서 설정한 API 키는 브라우저에 노출됩니다. 운영
-              환경에서는 키를 서버 또는 무료 서버리스 프록시에서 관리해야 합니다.
+              API 키는 GitHub Secrets에서 관리하며 브라우저에는 전달하지 않습니다.
+              화면은 인증정보가 제거된 공개 데이터 캐시만 읽습니다.
             </p>
           </div>
         </section>
@@ -921,7 +921,7 @@
         class="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-6 text-[10px] sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8"
       >
         <strong class="text-slate-200">Busan Red Tide Live</strong>
-        <span>연구·교육용 프로토타입 · 모든 현재 수치는 예시 데이터</span>
+        <span id="footer-data-status">연구·교육용 프로토타입 · 데이터 상태 확인 중</span>
         <span>Git 커밋 및 원격 작업 전 사용자 승인 필요</span>
       </div>
     </footer>

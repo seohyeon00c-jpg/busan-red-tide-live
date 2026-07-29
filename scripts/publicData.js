@@ -1,18 +1,19 @@
 import { calculateRisk } from './risk.js';
 
 const NIFS_BASE_URL = 'https://www.nifs.go.kr/OpenAPI_json';
-const KHOA_BASE_URL = 'https://apis.data.go.kr/1192136';
 const KOEM_URL =
   'https://apis.data.go.kr/B553931/service/OceansNemoService2/getOceansNemo2';
 const REQUEST_TIMEOUT = 8000;
+const PUBLIC_CACHE_URL = './data/live-marine.json';
+const PUBLIC_CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
 
 const AREA_ALIASES = {
-  gijang: ['기장', '대변'],
-  haeundae: ['해운대', '미포'],
-  gwangalli: ['광안', '수영만'],
-  yeongdo: ['영도', '태종대'],
-  dadaepo: ['다대포', '다대'],
-  gadeokdo: ['가덕도', '가덕', '대항'],
+  gijang: ['기장', '대변', '일광'],
+  haeundae: ['해운대', '미포', '송정'],
+  gwangalli: ['광안', '수영만', '수영'],
+  yeongdo: ['영도', '태종대', '부산항', '남항'],
+  dadaepo: ['다대포', '다대', '낙동강하구'],
+  gadeokdo: ['가덕도', '가덕', '대항', '진해만'],
 };
 
 const getConfig = () =>
@@ -25,6 +26,82 @@ const formatDate = (date) =>
     String(date.getDate()).padStart(2, '0'),
   ].join('');
 
+function decodeXmlText(value) {
+  return value
+    .replace(/^<!\[CDATA\[|\]\]>$/g, '')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&apos;', "'")
+    .replaceAll('&amp;', '&')
+    .trim();
+}
+
+function parseXmlRecords(text) {
+  const resultCode =
+    text.match(/<resultCode[^>]*>([\s\S]*?)<\/resultCode>/i)?.[1] ?? '';
+  const resultMessage =
+    text.match(/<resultMsg[^>]*>([\s\S]*?)<\/resultMsg>/i)?.[1] ?? '';
+
+  if (resultCode && !['0', '00'].includes(decodeXmlText(resultCode))) {
+    throw new Error(
+      `API 응답 오류: ${decodeXmlText(resultMessage) || decodeXmlText(resultCode)}`,
+    );
+  }
+
+  const itemBlocks = [
+    ...text.matchAll(/<(?:item|Item)[^>]*>([\s\S]*?)<\/(?:item|Item)>/g),
+  ];
+
+  if (
+    itemBlocks.length === 0 &&
+    /SERVICE_KEY|INVALID REQUEST|APPLICATION_ERROR|DEADLINE_EXCEEDED/i.test(
+      text,
+    )
+  ) {
+    throw new Error('API 인증 또는 요청 형식 오류');
+  }
+
+  return itemBlocks.map((match) => {
+    const record = {};
+    const fieldPattern =
+      /<([A-Za-z0-9_:-]+)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/g;
+
+    for (const field of match[1].matchAll(fieldPattern)) {
+      record[field[1]] = decodeXmlText(field[2]);
+    }
+
+    return record;
+  });
+}
+
+function findNestedValue(value, targetKeys) {
+  if (!value || typeof value !== 'object') return undefined;
+
+  for (const [key, nestedValue] of Object.entries(value)) {
+    if (targetKeys.includes(key)) return nestedValue;
+  }
+
+  for (const nestedValue of Object.values(value)) {
+    const found = findNestedValue(nestedValue, targetKeys);
+    if (found !== undefined) return found;
+  }
+
+  return undefined;
+}
+
+function assertJsonSuccess(payload) {
+  const resultCode = asText(
+    findNestedValue(payload, ['resultCode', 'result_code']),
+  );
+  if (!resultCode || ['0', '00'].includes(resultCode)) return;
+
+  const resultMessage = asText(
+    findNestedValue(payload, ['resultMsg', 'resultMessage', 'result_msg']),
+  );
+  throw new Error(`API 응답 오류: ${resultMessage || resultCode}`);
+}
+
 async function fetchJson(url, fetchImplementation = fetch) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
@@ -32,6 +109,7 @@ async function fetchJson(url, fetchImplementation = fetch) {
   try {
     const response = await fetchImplementation(url, {
       signal: controller.signal,
+      cache: 'no-store',
       headers: {
         Accept: 'application/json',
       },
@@ -41,7 +119,19 @@ async function fetchJson(url, fetchImplementation = fetch) {
       throw new Error(`HTTP ${response.status}`);
     }
 
-    return await response.json();
+    const text = await response.text();
+    if (!text.trim()) return [];
+
+    let payload;
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      if (text.trim().startsWith('<')) return parseXmlRecords(text);
+      throw new Error('API 응답을 해석할 수 없습니다.');
+    }
+
+    assertJsonSuccess(payload);
+    return payload;
   } finally {
     clearTimeout(timeout);
   }
@@ -168,38 +258,13 @@ export async function fetchNifsRedTide(
   );
 }
 
-export async function fetchNifsRisa(startDate, endDate, options = {}) {
+export async function fetchNifsRisa(options = {}) {
   const key = options.key ?? getConfig().NIFS_API_KEY?.trim();
   if (!key) throw new Error('NIFS API 키가 설정되지 않았습니다.');
 
   const url = new URL(NIFS_BASE_URL);
   url.searchParams.set('id', 'risaList');
   url.searchParams.set('key', key);
-  url.searchParams.set('sdate', formatDate(startDate));
-  url.searchParams.set('edate', formatDate(endDate));
-
-  return findRecordArray(
-    await fetchJson(url, options.fetchImplementation),
-  );
-}
-
-export async function fetchKhoaRecent(
-  type,
-  observationCode,
-  options = {},
-) {
-  const key = options.key ?? getConfig().DATA_GO_KR_KEY?.trim();
-  if (!key) throw new Error('공공데이터포털 API 키가 설정되지 않았습니다.');
-  if (!observationCode) throw new Error('KHOA 관측소 코드가 없습니다.');
-
-  const path =
-    type === 'tide'
-      ? '/dtRecent/GetDTRecentApiService'
-      : '/twRecent/GetTWRecentApiService';
-  const url = new URL(`${KHOA_BASE_URL}${path}`);
-  url.searchParams.set('serviceKey', key);
-  url.searchParams.set('ObsCode', observationCode);
-  url.searchParams.set('_type', 'json');
 
   return findRecordArray(
     await fetchJson(url, options.fetchImplementation),
@@ -212,10 +277,15 @@ export async function fetchKoemMeasurements(year, options = {}) {
 
   const url = new URL(KOEM_URL);
   url.searchParams.set('serviceKey', key);
-  url.searchParams.set('resultType', 'json');
   url.searchParams.set('pageNo', '1');
-  url.searchParams.set('numOfRows', '200');
+  url.searchParams.set('numOfRows', '500');
   url.searchParams.set('syr', String(year));
+  url.searchParams.set('sdate', `${year}0101`);
+  url.searchParams.set(
+    'edate',
+    formatDate(options.endDate ?? new Date()),
+  );
+  url.searchParams.set('OCEAN_NM', '남해');
 
   return findRecordArray(
     await fetchJson(url, options.fetchImplementation),
@@ -232,6 +302,7 @@ function mergeNifsRedTide(records, areas) {
       '조사지역',
       '조사장소',
       '해역명',
+      'txt_seas',
       'area',
       'areaNm',
       'location',
@@ -244,18 +315,38 @@ function mergeNifsRedTide(records, areas) {
         '최대생물밀도',
         '최대밀도',
         '생물밀도',
+        'max_density',
         'maxDensity',
         'maxCellDensity',
       ]),
     );
     const temperature = asMaximumNumber(
-      pick(record, ['최대수온', '수온', 'maxTemp', 'waterTemp']),
+      pick(record, [
+        '최대수온',
+        '수온',
+        'max_watertemp',
+        'maxTemp',
+        'waterTemp',
+      ]),
     );
     const organism = asText(
-      pick(record, ['원인생물', '생물명', 'organism', 'species']),
+      pick(record, [
+        '원인생물',
+        '생물명',
+        'nam_biology',
+        'organism',
+        'species',
+      ]),
     );
     const observedAt = asText(
-      pick(record, ['조사일시', '조사일자', '관측일시', 'date', 'obsDate']),
+      pick(record, [
+        '조사일시',
+        '조사일자',
+        '관측일시',
+        'day_report',
+        'date',
+        'obsDate',
+      ]),
     );
 
     if (updateNumberField(area, 'cellDensity', density)) matchedFields += 1;
@@ -292,6 +383,7 @@ function mergeNifsRisa(records, areas) {
       '관측소',
       '관측소명',
       '정점명',
+      'sta_nam_kor',
       'station',
       'stationName',
     ]);
@@ -299,11 +391,24 @@ function mergeNifsRisa(records, areas) {
     if (!area) return;
 
     const temperature = asNumber(
-      pick(record, ['수온', '수온(℃)', 'waterTemp', 'wtrTmp', 'temp']),
+      pick(record, [
+        '수온',
+        '수온(℃)',
+        'wtr_tmp',
+        'waterTemp',
+        'wtrTmp',
+        'temp',
+      ]),
     );
-    const observedAt = asText(
-      pick(record, ['관측일시', '관측시간', 'date', 'obsDate']),
+    const observedDate = asText(
+      pick(record, ['관측일자', 'obs_dat', 'date', 'obsDate']),
     );
+    const observedTime = asText(
+      pick(record, ['관측시간', 'obs_tim', 'time', 'obsTime']),
+    );
+    const observedAt = [observedDate, observedTime]
+      .filter(Boolean)
+      .join(' ');
 
     if (updateNumberField(area, 'waterTemperature', temperature)) {
       matchedFields += 1;
@@ -322,6 +427,10 @@ function mergeKoem(records, areas) {
       '정점명',
       '정점',
       '해역명',
+      'STNPNT_KOREAN_NM',
+      'stnpntKoreanNm',
+      'stnpntNm',
+      'oceanNm',
       'station',
       'stationName',
       'staNm',
@@ -331,47 +440,64 @@ function mergeKoem(records, areas) {
 
     const fields = {
       chlorophyllA: asNumber(
-        pick(record, ['Chl-a', 'CHL_A', 'chla', '클로로필a', '엽록소a']),
+        pick(record, [
+          'Chl-a',
+          'CHL_A',
+          'chla',
+          'chlaSur',
+          'chlASur',
+          '클로로필a',
+          '클로로필A표층',
+          '엽록소a',
+        ]),
       ),
-      ph: asNumber(pick(record, ['pH', 'PH', 'ph'])),
+      ph: asNumber(
+        pick(record, ['pH', 'PH', 'ph', 'phSur', '수소이온농도표층']),
+      ),
       dissolvedOxygen: asNumber(
-        pick(record, ['DO', 'do', '용존산소']),
+        pick(record, [
+          'DO',
+          'do',
+          'doxSur',
+          'doSur',
+          '용존산소',
+          '용존산소량표층',
+        ]),
       ),
       waterTemperature: asNumber(
-        pick(record, ['수온', 'waterTemp', 'wtrTmp']),
+        pick(record, [
+          '수온',
+          '수온표층',
+          'wtemSur',
+          'waterTemp',
+          'wtrTmp',
+        ]),
       ),
-      salinity: asNumber(pick(record, ['염분', 'salinity', 'salt'])),
+      salinity: asNumber(
+        pick(record, [
+          '염분',
+          '염분표층',
+          'salntySur',
+          'salinity',
+          'salt',
+        ]),
+      ),
     };
 
     Object.entries(fields).forEach(([field, value]) => {
       if (updateNumberField(area, field, value)) matchedFields += 1;
     });
+
+    const observedAt = asText(
+      pick(record, [
+        '관측일자',
+        'obsDate',
+        'mesureDe',
+        'investigationDate',
+      ]),
+    );
+    if (observedAt) area.referenceTime = observedAt;
   });
-
-  return matchedFields;
-}
-
-function mergeKhoa(records, areas, areaId) {
-  const area = areas.find((item) => item.id === areaId);
-  if (!area || records.length === 0) return 0;
-
-  const latest = records.at(-1);
-  let matchedFields = 0;
-  const temperature = asNumber(
-    pick(latest, ['수온', 'water_temp', 'waterTemp', 'wtrTmp']),
-  );
-  const salinity = asNumber(
-    pick(latest, ['염분', 'salinity', 'salt']),
-  );
-  const observedAt = asText(
-    pick(latest, ['관측시간', '관측일시', 'record_time', 'date']),
-  );
-
-  if (updateNumberField(area, 'waterTemperature', temperature)) {
-    matchedFields += 1;
-  }
-  if (updateNumberField(area, 'salinity', salinity)) matchedFields += 1;
-  if (observedAt) area.referenceTime = observedAt;
 
   return matchedFields;
 }
@@ -391,16 +517,14 @@ function createDefaultSources(config) {
       status: 'unavailable',
       message: config.NIFS_API_KEY
         ? '연결 확인 중'
-        : '무료 API 키 미설정 · 시연 데이터 사용',
+        : '공개 데이터 캐시 없음 · 시연 데이터 사용',
     },
     {
       id: 'khoa',
       agency: '국립해양조사원',
-      dataset: '조위관측소 · 해양관측부이 최신자료',
+      dataset: '해양관측 국가중점데이터',
       status: 'ready',
-      message: config.DATA_GO_KR_KEY
-        ? '관측소 코드 확인 중'
-        : '무료 API 키·관측소 코드 설정 필요',
+      message: '기존 최신관측 API 폐기 · 대체서비스 검토 중',
     },
     {
       id: 'koem',
@@ -409,7 +533,7 @@ function createDefaultSources(config) {
       status: 'ready',
       message: config.DATA_GO_KR_KEY
         ? '연결 확인 중'
-        : '무료 공공데이터포털 키 설정 필요',
+        : '공개 데이터 캐시 없음 · 시연 데이터 사용',
     },
     {
       id: 'map',
@@ -421,6 +545,88 @@ function createDefaultSources(config) {
   ];
 }
 
+function mergeCachedArea(baseArea, cachedArea) {
+  if (!cachedArea || cachedArea.id !== baseArea.id) {
+    return cloneAreas([baseArea])[0];
+  }
+
+  return {
+    ...baseArea,
+    ...cachedArea,
+    riskBreakdown: {
+      ...baseArea.riskBreakdown,
+      ...(cachedArea.riskBreakdown ?? {}),
+    },
+    dataStatus: {
+      ...baseArea.dataStatus,
+      ...(cachedArea.dataStatus ?? {}),
+      fields: {
+        ...baseArea.dataStatus.fields,
+        ...(cachedArea.dataStatus?.fields ?? {}),
+      },
+    },
+  };
+}
+
+async function loadPublicDataCache(demoAreas, options, config) {
+  const now = options.now ?? new Date();
+  const cacheUrl =
+    options.cacheUrl ??
+    config.PUBLIC_DATA_CACHE_URL?.trim() ??
+    PUBLIC_CACHE_URL;
+  const payload = await fetchJson(cacheUrl, options.fetchImplementation);
+
+  if (
+    !payload ||
+    typeof payload !== 'object' ||
+    payload.schemaVersion !== 1 ||
+    !Array.isArray(payload.areas)
+  ) {
+    throw new Error('공개 데이터 캐시 형식이 올바르지 않습니다.');
+  }
+
+  const generatedAt = new Date(payload.generatedAt ?? payload.updatedAt);
+  if (Number.isNaN(generatedAt.getTime())) {
+    throw new Error('공개 데이터 캐시 생성 시각이 없습니다.');
+  }
+
+  const age = Math.max(0, now.getTime() - generatedAt.getTime());
+  const maximumAge = options.cacheMaxAge ?? PUBLIC_CACHE_MAX_AGE;
+  if (age > maximumAge) {
+    throw new Error('공개 데이터 캐시가 24시간 이상 갱신되지 않았습니다.');
+  }
+
+  const cachedById = new Map(
+    payload.areas.map((area) => [area.id, area]),
+  );
+  const areas = demoAreas.map((area) =>
+    mergeCachedArea(area, cachedById.get(area.id)),
+  );
+  const ageInHours = Math.max(0, Math.floor(age / (60 * 60 * 1000)));
+  const warnings = [
+    `GitHub Actions가 수집한 공개 데이터 캐시를 사용합니다. 마지막 수집: ${ageInHours}시간 전`,
+    ...(Array.isArray(payload.warnings) ? payload.warnings : []),
+  ];
+
+  return {
+    areas,
+    mode: payload.mode === 'hybrid' ? 'hybrid' : 'demo',
+    sources: Array.isArray(payload.sources)
+      ? payload.sources
+      : createDefaultSources(config),
+    warnings,
+    officialObservations: Array.isArray(payload.officialObservations)
+      ? payload.officialObservations
+      : [],
+    updatedAt: generatedAt.toISOString(),
+    cache: {
+      source: 'github-actions',
+      generatedAt: generatedAt.toISOString(),
+      age,
+    },
+  };
+}
+
 /**
  * 가능한 공공데이터를 병렬 호출하고 실패한 자료는 시연 데이터로 유지합니다.
  */
@@ -428,12 +634,31 @@ export async function loadPublicMarineData(demoAreas, options = {}) {
   const config = { ...getConfig(), ...(options.config ?? {}) };
   const fetchImplementation = options.fetchImplementation;
   const now = options.now ?? new Date();
+  let cacheError;
+
+  if (
+    !options.skipCache &&
+    (options.preferCache || typeof window !== 'undefined')
+  ) {
+    try {
+      return await loadPublicDataCache(demoAreas, options, config);
+    } catch (error) {
+      cacheError = error;
+    }
+  }
+
   const startDate = new Date(now);
   startDate.setDate(now.getDate() - 30);
   const areas = cloneAreas(demoAreas);
   const sources = createDefaultSources(config);
   const warnings = [];
   const operations = [];
+
+  if (cacheError) {
+    warnings.push(
+      '공개 데이터 캐시를 읽지 못해 시연 데이터로 안전하게 전환했습니다.',
+    );
+  }
 
   if (config.NIFS_API_KEY?.trim()) {
     operations.push(
@@ -446,7 +671,7 @@ export async function loadPublicMarineData(demoAreas, options = {}) {
       },
       {
         id: 'nifs-risa',
-        request: fetchNifsRisa(startDate, now, {
+        request: fetchNifsRisa({
           key: config.NIFS_API_KEY.trim(),
           fetchImplementation,
         }),
@@ -460,36 +685,10 @@ export async function loadPublicMarineData(demoAreas, options = {}) {
       request: fetchKoemMeasurements(now.getFullYear(), {
         key: config.DATA_GO_KR_KEY.trim(),
         fetchImplementation,
+        endDate: now,
       }),
     });
 
-    if (config.KHOA_TIDE_OBSERVATION_CODE?.trim()) {
-      operations.push({
-        id: 'khoa-tide',
-        request: fetchKhoaRecent(
-          'tide',
-          config.KHOA_TIDE_OBSERVATION_CODE.trim(),
-          {
-            key: config.DATA_GO_KR_KEY.trim(),
-            fetchImplementation,
-          },
-        ),
-      });
-    }
-
-    if (config.KHOA_BUOY_OBSERVATION_CODE?.trim()) {
-      operations.push({
-        id: 'khoa-buoy',
-        request: fetchKhoaRecent(
-          'buoy',
-          config.KHOA_BUOY_OBSERVATION_CODE.trim(),
-          {
-            key: config.DATA_GO_KR_KEY.trim(),
-            fetchImplementation,
-          },
-        ),
-      });
-    }
   }
 
   const results = await Promise.all(
@@ -549,51 +748,6 @@ export async function loadPublicMarineData(demoAreas, options = {}) {
     warnings.push(`KOEM 연결 실패: ${describeError(koemResult.error)}`);
   }
 
-  const khoaSource = sources.find((source) => source.id === 'khoa');
-  const khoaResults = [
-    resultById.get('khoa-tide'),
-    resultById.get('khoa-buoy'),
-  ].filter(Boolean);
-  let khoaMatchedFields = 0;
-
-  const tideResult = resultById.get('khoa-tide');
-  if (tideResult?.ok) {
-    khoaMatchedFields += mergeKhoa(
-      tideResult.records,
-      areas,
-      config.KHOA_TIDE_AREA_ID,
-    );
-  }
-  const buoyResult = resultById.get('khoa-buoy');
-  if (buoyResult?.ok) {
-    khoaMatchedFields += mergeKhoa(
-      buoyResult.records,
-      areas,
-      config.KHOA_BUOY_AREA_ID,
-    );
-  }
-  observedFieldCount += khoaMatchedFields;
-
-  if (khoaResults.some((result) => result.ok)) {
-    khoaSource.status = 'connected';
-    khoaSource.message =
-      khoaMatchedFields > 0
-        ? 'API 연결 · 지정 해역 최신값 반영'
-        : 'API 연결 · 해역 ID 매핑 필요';
-  } else if (khoaResults.some((result) => !result.ok)) {
-    khoaSource.status = 'unavailable';
-    khoaSource.message = '연결 실패 · 관련 지표는 예시값 유지';
-    warnings.push(
-      `KHOA 연결 실패: ${[
-        ...new Set(
-          khoaResults
-            .filter((result) => !result.ok)
-            .map((result) => describeError(result.error)),
-        ),
-      ].join(', ')}`,
-    );
-  }
-
   recalculateRisks(areas);
 
   const uniqueOfficialObservations = [
@@ -612,7 +766,7 @@ export async function loadPublicMarineData(demoAreas, options = {}) {
     );
   } else {
     warnings.unshift(
-      '일부 공식 관측값만 반영됐으며 나머지 환경지표와 24시간 추이는 예시 데이터입니다.',
+      '일부 공식 관측값만 반영됐으며 나머지 환경지표와 7일 전망은 시연·실험 데이터입니다.',
     );
   }
 

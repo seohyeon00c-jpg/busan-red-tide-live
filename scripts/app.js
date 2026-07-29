@@ -193,6 +193,7 @@ function renderSystemState() {
   const headerStatus = document.querySelector('#header-system-status');
   const banner = document.querySelector('#system-mode-banner');
   const sourceModeBadge = document.querySelector('#source-mode-badge');
+  const footerDataStatus = document.querySelector('#footer-data-status');
 
   headerStatus.dataset.mode = dashboardState.mode;
   document.querySelector('#header-system-status-text').textContent = hybrid
@@ -217,6 +218,12 @@ function renderSystemState() {
   document.querySelector('#hero-reference-label').textContent = hybrid
     ? `${formatReferenceTime(dashboardState.updatedAt)} 연결 확인`
     : '2026.07.28 초기 시연 스냅샷';
+
+  if (footerDataStatus) {
+    footerDataStatus.textContent = hybrid
+      ? '연구·교육용 프로토타입 · 일부 공식 관측값과 예시 데이터 혼합'
+      : '연구·교육용 프로토타입 · 모든 현재 수치는 예시 데이터';
+  }
 }
 
 function renderDataSources() {
@@ -982,12 +989,8 @@ async function initializeApp() {
   } catch (error) {
     console.error('공공데이터 초기화에 실패해 시연모드로 전환합니다.', error);
     dashboardState = await loadPublicMarineData(demoMarineAreas, {
-      config: {
-        NIFS_API_KEY: '',
-        DATA_GO_KR_KEY: '',
-        KHOA_TIDE_OBSERVATION_CODE: '',
-        KHOA_BUOY_OBSERVATION_CODE: '',
-      },
+      skipCache: true,
+      config: {},
     });
     dashboardState.warnings.push(
       '데이터 처리 중 예기치 않은 오류가 발생해 전체 시연모드로 전환했습니다.',

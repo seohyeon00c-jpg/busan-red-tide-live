@@ -1,0 +1,60 @@
+name: Collect public marine data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */3 * * *'
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: public-marine-data
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Resolve GitHub Pages source branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pages_branch="$(gh api "repos/${GITHUB_REPOSITORY}/pages" --jq '.source.branch')"
+          echo "DATA_BRANCH=${pages_branch}" >> "$GITHUB_ENV"
+
+      - name: Check out Pages source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DATA_BRANCH }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Collect public data
+        env:
+          NIFS_API_KEY: ${{ secrets.NIFS_API_KEY }}
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+        run: node scripts/collectPublicData.mjs
+
+      - name: Commit updated public cache
+        run: |
+          git add data/live-marine.json
+          if git diff --cached --quiet; then
+            echo "Public cache is already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update public marine data cache"
+          git push origin "HEAD:${DATA_BRANCH}"
+
+      - name: Request GitHub Pages rebuild
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST "repos/${GITHUB_REPOSITORY}/pages/builds"

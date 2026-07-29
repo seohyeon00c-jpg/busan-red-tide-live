@@ -10,7 +10,10 @@
 
 ## 중요 안내
 
-기본 설정에서는 공공 API 키가 비어 있으므로 모든 해양 수치가 `시연모드 · 예시 데이터`로 표시됩니다.
+공개 사이트는 API 키를 직접 사용하지 않습니다. GitHub Actions가 Secrets의 키로
+공공데이터를 수집하고 인증정보가 제거된 캐시를 만들며, 화면은 이 캐시만 읽습니다.
+캐시가 없거나 24시간 이상 갱신되지 않으면 `시연모드 · 예시 데이터`로 안전하게
+전환됩니다.
 
 - 예시 데이터는 실제 관측자료가 아닙니다.
 - 자체 위험지수는 공식 적조특보와 별개의 연구·교육용 지표입니다.
@@ -49,44 +52,41 @@ python -m http.server 4173
 
 VS Code의 Live Server와 같은 정적 파일 서버를 사용할 수 있습니다. ES Modules와 공공 API 호출을 사용하므로 `index.html`을 파일로 직접 여는 방식보다 로컬 HTTP 서버를 권장합니다.
 
-## 무료 API 설정
+## 무료 API와 GitHub Secrets 설정
 
-`scripts/config.js`에서 필요한 값만 입력합니다.
+API 키는 `config.js`나 브라우저 코드에 입력하지 않습니다. 저장소의 GitHub
+Secrets에 다음 이름으로 등록합니다.
+
+```text
+NIFS_API_KEY
+DATA_GO_KR_KEY
+```
+
+`.github/workflows/collect-public-data.yml`이 3시간마다 다음 작업을 수행합니다.
+
+1. GitHub Secrets를 이용해 NIFS·KOEM API를 호출합니다.
+2. 인증키가 포함되지 않은 `data/live-marine.json`만 생성합니다.
+3. GitHub Pages 소스 브랜치에 공개 캐시를 커밋합니다.
+4. GitHub Pages 재배포를 요청합니다.
+
+브라우저는 `scripts/config.js`에 지정된 공개 JSON만 읽습니다.
 
 ```js
 window.APP_CONFIG = Object.freeze({
-  NIFS_API_KEY: '',
-  DATA_GO_KR_KEY: '',
-  KHOA_TIDE_OBSERVATION_CODE: '',
-  KHOA_BUOY_OBSERVATION_CODE: '',
-  KHOA_TIDE_AREA_ID: '',
-  KHOA_BUOY_AREA_ID: '',
+  PUBLIC_DATA_CACHE_URL: './data/live-marine.json',
 });
 ```
 
-KHOA 관측자료를 특정 해역에 적용하려면 다음 해역 ID 중 하나를 설정합니다.
-
-- `gijang`
-- `haeundae`
-- `gwangalli`
-- `yeongdo`
-- `dadaepo`
-- `gadeokdo`
-
-예:
-
-```js
-KHOA_TIDE_OBSERVATION_CODE: '관측소 코드',
-KHOA_TIDE_AREA_ID: 'yeongdo',
-```
+워크플로는 기본 브랜치에 병합된 뒤 예약 실행됩니다. GitHub Actions 화면의
+`Collect public marine data`에서 `Run workflow`를 눌러 즉시 수동 수집할 수도
+있습니다.
 
 ### API 키 보안
 
-이 프로젝트는 정적 프론트엔드 프로토타입이므로 `config.js`에 입력한 키가 브라우저에 노출됩니다.
-
-- 시연·연구 환경에서만 브라우저 직접 호출을 사용하세요.
-- 운영 환경에서는 서버 또는 무료 서버리스 프록시에서 키를 관리하세요.
-- 도메인·호출량 제한을 지원하는 경우 반드시 제한을 설정하세요.
+- GitHub Secrets의 값은 웹사이트와 공개 JSON에 포함되지 않습니다.
+- 수집 스크립트는 출력 파일에서 키 문자열이 감지되면 저장을 중단합니다.
+- 공개 캐시가 없거나 24시간 이상 갱신되지 않으면 시연 데이터로 전환합니다.
+- Actions 로그에 인증키나 키가 포함된 요청 URL을 출력하지 않습니다.
 
 ## 데이터 출처
 
@@ -98,9 +98,9 @@ KHOA_TIDE_AREA_ID: 'yeongdo',
 
 ### 국립해양조사원 KHOA
 
-- 조위관측소 최신자료: `https://apis.data.go.kr/1192136/dtRecent/GetDTRecentApiService`
-- 해양관측부이 최신자료: `https://apis.data.go.kr/1192136/twRecent/GetTWRecentApiService`
-- 활용 예정 항목: 수온, 염분, 풍향, 풍속, 유향, 유속, 조위, 기압
+- 기존 조위관측소·해양관측부이 최신자료 API는 2026년 1월 제공이 중단됐습니다.
+- 국가중점데이터로 새로 개방된 대체서비스의 규격을 확인한 뒤 연결할 예정입니다.
+- 대체서비스 연결 전에는 KHOA 값을 실제 관측값으로 표시하지 않습니다.
 
 ### 해양환경공단 KOEM
 
@@ -116,13 +116,14 @@ KHOA_TIDE_AREA_ID: 'yeongdo',
 
 ## 데이터 처리 원칙
 
-1. API 키가 없으면 네트워크 요청을 보내지 않습니다.
+1. API 키는 GitHub Actions에서만 사용합니다.
 2. API 호출은 병렬로 실행하며 요청당 8초 제한을 적용합니다.
 3. 부산 해역명이 매칭되는 필드만 공식 관측값으로 반영합니다.
 4. 매칭되지 않은 필드는 예시값을 유지합니다.
 5. 각 상세 지표에 `관측` 또는 `예시` 배지를 표시합니다.
 6. CORS, HTTP, 네트워크, 응답 구조 오류가 발생하면 시연모드로 안전하게 전환합니다.
 7. NIFS 적조정보에서 확인된 날짜만 공식 관측 달력에 표시합니다.
+8. 브라우저는 24시간 이내에 생성된 공개 캐시만 사용합니다.
 
 ## 공식 관측과 자체 위험지수의 차이
 
@@ -165,8 +166,8 @@ KHOA_TIDE_AREA_ID: 'yeongdo',
 - 부산 6개 해역 위험도 마커
 - 선택 해역 상세 지표와 필드별 출처
 - 자체 위험지수와 공식 기준 비교
-- 24시간 세포밀도·수온 시연 그래프
 - 규칙 기반 데이터 브리핑
+- 선택 해역 D+1~D+7 교육용 위험 전망
 - 현재 연·월 자동 월간 달력
 - 모델 위험도·공식 관측 달력 분리
 - 공공 API 연결 상태와 안전한 오류 전환
@@ -176,6 +177,9 @@ KHOA_TIDE_AREA_ID: 'yeongdo',
 
 ```text
 .
+├── .github/
+│   └── workflows/
+│       └── collect-public-data.yml
 ├── index.html
 ├── styles.css
 ├── AGENTS.md
@@ -184,6 +188,7 @@ KHOA_TIDE_AREA_ID: 'yeongdo',
     ├── app.js
     ├── briefing.js
     ├── calendar.js
+    ├── collectPublicData.mjs
     ├── config.js
     ├── data.js
     ├── forecast.js
