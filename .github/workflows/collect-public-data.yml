@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
 
 concurrency:
   group: public-marine-data
@@ -26,10 +25,8 @@ jobs:
           pages_branch="$(gh api "repos/${GITHUB_REPOSITORY}/pages" --jq '.source.branch')"
           echo "DATA_BRANCH=${pages_branch}" >> "$GITHUB_ENV"
 
-      - name: Check out Pages source
+      - name: Check out collector source
         uses: actions/checkout@v4
-        with:
-          ref: ${{ env.DATA_BRANCH }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -42,8 +39,17 @@ jobs:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
         run: node scripts/collectPublicData.mjs
 
+      - name: Check out Pages source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DATA_BRANCH }}
+          path: public-site
+
       - name: Commit updated public cache
         run: |
+          mkdir -p public-site/data
+          cp data/live-marine.json public-site/data/live-marine.json
+          cd public-site
           git add data/live-marine.json
           if git diff --cached --quiet; then
             echo "Public cache is already up to date."
@@ -53,8 +59,3 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Update public marine data cache"
           git push origin "HEAD:${DATA_BRANCH}"
-
-      - name: Request GitHub Pages rebuild
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh api --method POST "repos/${GITHUB_REPOSITORY}/pages/builds"
