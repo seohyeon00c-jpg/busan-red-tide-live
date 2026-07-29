@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-29T03:00:33.022Z",
+  "generatedAt": "2026-07-29T03:06:58.081Z",
   "collector": "github-actions",
   "mode": "demo",
   "areas": [
@@ -270,8 +270,8 @@
       "id": "koem",
       "agency": "해양환경공단",
       "dataset": "해양환경측정망",
-      "status": "unavailable",
-      "message": "연결 실패 · 관련 지표는 예시값 유지"
+      "status": "connected",
+      "message": "API 연결 · 부산 해역 정점 매칭 필요"
     },
     {
       "id": "map",
@@ -282,8 +282,7 @@
     }
   ],
   "warnings": [
-    "공공 관측값이 반영되지 않아 모든 해양 수치는 예시 데이터입니다.",
-    "KOEM 연결 실패: 요청 시간 초과"
+    "공공 관측값이 반영되지 않아 모든 해양 수치는 예시 데이터입니다."
   ],
   "officialObservations": []
 }
