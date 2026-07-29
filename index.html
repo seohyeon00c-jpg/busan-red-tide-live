@@ -89,6 +89,12 @@
             데이터 브리핑
           </a>
           <a
+            href="#forecast"
+            class="rounded-lg px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/5 hover:text-white"
+          >
+            7일 예측
+          </a>
+          <a
             href="#calendar"
             class="rounded-lg px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/5 hover:text-white"
           >
@@ -137,6 +143,7 @@
         <a href="#overview">서비스 소개</a>
         <a href="#monitoring">해역 지도</a>
         <a href="#analysis">데이터 브리핑</a>
+        <a href="#forecast">7일 예측</a>
         <a href="#calendar">위험 달력</a>
         <a href="#sources">데이터 출처</a>
       </nav>
@@ -584,6 +591,128 @@
           </article>
         </section>
 
+        <!-- 선택 해역 7일 적조 위험 예측 -->
+        <section
+          id="forecast"
+          class="mt-6 scroll-mt-24 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-panel"
+          aria-labelledby="forecast-area-title"
+        >
+          <div class="border-b border-slate-100 p-4 sm:p-5">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div class="flex items-start gap-3">
+                <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700">
+                  <i data-lucide="chart-no-axes-combined" class="h-6 w-6"></i>
+                </span>
+                <div>
+                  <p class="text-[9px] font-extrabold tracking-[0.12em] text-violet-600">
+                    7-DAY RISK OUTLOOK
+                  </p>
+                  <h2
+                    id="forecast-area-title"
+                    class="mt-1 text-xl font-extrabold tracking-tight text-ocean-900"
+                  >
+                    기장 해역 7일 적조 위험 전망
+                  </h2>
+                  <p class="mt-2 text-xs leading-5 text-slate-500">
+                    현재 환경과 최근 세포밀도 변화를 이용해 D+1부터 D+7까지 계산합니다.
+                  </p>
+                </div>
+              </div>
+              <span
+                id="forecast-mode-badge"
+                class="forecast-mode-badge w-fit rounded-md px-2.5 py-1.5 text-[9px] font-extrabold"
+                data-mode="demo"
+              >
+                시연 예측 · 공식 예보 아님
+              </span>
+            </div>
+
+            <div
+              id="forecast-notice"
+              class="forecast-notice mt-4 flex items-start gap-2 rounded-lg border px-3 py-2.5 text-[10px] leading-5"
+              data-mode="demo"
+            ></div>
+          </div>
+
+          <div class="p-4 sm:p-5">
+            <div
+              id="forecast-summary"
+              class="grid gap-2 sm:grid-cols-2 xl:grid-cols-4"
+              aria-label="7일 예측 핵심 요약"
+            ></div>
+
+            <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50/70 p-3 sm:p-4">
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h3 class="text-sm font-extrabold text-ocean-900">일별 모델 위험도</h3>
+                  <p class="mt-1 text-[9px] text-slate-500">
+                    막대는 자체 0~100 위험지수이며 숫자 범위는 모델 불확실성입니다.
+                  </p>
+                </div>
+                <span class="text-[8px] font-bold text-slate-400">공식 적조특보와 별개</span>
+              </div>
+              <div
+                id="forecast-chart"
+                class="forecast-chart mt-4"
+                role="list"
+                aria-label="선택 해역 7일 모델 위험도"
+              ></div>
+            </div>
+
+            <details class="forecast-details mt-4 rounded-xl border border-slate-200">
+              <summary class="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-4 py-3 text-xs font-bold text-slate-700">
+                <span class="flex items-center gap-2">
+                  <i data-lucide="table-2" class="h-4 w-4 text-violet-600"></i>
+                  일별 예측 상세보기
+                </span>
+                <i data-lucide="chevron-down" class="forecast-details-icon h-4 w-4"></i>
+              </summary>
+              <div class="forecast-table-scroll border-t border-slate-100">
+                <table class="forecast-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">예측일</th>
+                      <th scope="col">위험도</th>
+                      <th scope="col">예측 세포밀도</th>
+                      <th scope="col">일 변화율</th>
+                      <th scope="col">모델 신뢰도</th>
+                    </tr>
+                  </thead>
+                  <tbody id="forecast-table-body"></tbody>
+                </table>
+              </div>
+            </details>
+
+            <div class="mt-4 grid gap-3 lg:grid-cols-[0.75fr_1.25fr]">
+              <div class="rounded-xl bg-ocean-900 p-4 text-white">
+                <span class="text-[8px] font-extrabold tracking-[0.12em] text-violet-300">
+                  MODEL INFORMATION
+                </span>
+                <strong id="forecast-model-version" class="mt-2 block text-sm">
+                  교육용 규칙모형 v0.1
+                </strong>
+                <span id="forecast-reference-time" class="mt-2 block text-[9px] text-slate-400"></span>
+                <p class="mt-3 text-[9px] leading-5 text-slate-300">
+                  통계적으로 학습·검증된 운영모델이 아닌 참고 시나리오입니다.
+                  신뢰도는 입력 완결성과 예측거리로 만든 참고치이며 검증 정확도가
+                  아닙니다. 실제 대응 전에는 국립수산과학원의 공식 적조정보를
+                  확인하세요.
+                </p>
+              </div>
+              <div class="rounded-xl border border-teal-100 bg-teal-50/60 p-4">
+                <strong class="flex items-center gap-2 text-xs text-teal-900">
+                  <i data-lucide="list-checks" class="h-4 w-4"></i>
+                  현재 모델의 계산 가정
+                </strong>
+                <ul
+                  id="forecast-assumptions"
+                  class="mt-3 grid gap-2 text-[10px] leading-5 text-teal-900 sm:grid-cols-3"
+                ></ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- 현재 날짜 기준 월간 적조 달력 -->
         <section
           id="calendar"
@@ -777,10 +906,10 @@
               </div>
               <h3 class="mt-4 font-bold text-slate-900">예측모델 결과</h3>
               <p class="mt-2 text-xs leading-5 text-slate-600">
-                검증된 시계열·확산 모델이 연결된 뒤에만 제공합니다. 현재는
-                임의 미래 값을 만들지 않습니다.
+                현재 환경의 지속성과 최근 변화 감쇠를 이용한 교육용 7일 참고
+                시나리오입니다. 검증된 운영 예보나 공식기관 발표가 아닙니다.
               </p>
-              <strong class="mt-3 block text-xs text-violet-700">현재 상태 · 제공 안 함</strong>
+              <strong class="mt-3 block text-xs text-violet-700">현재 상태 · 시연 예측 제공</strong>
             </article>
           </div>
         </section>

@@ -112,7 +112,7 @@ export const marineAreas = areaSeeds.map((area) => {
       measurements: 'demo',
       riskIndex: 'derived-demo',
       officialAlert: 'not-connected',
-      forecast: 'not-provided',
+      forecast: 'demo-forecast',
       fields: {
         cellDensity: 'demo',
         organism: 'demo',

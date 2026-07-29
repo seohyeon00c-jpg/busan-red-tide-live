@@ -340,6 +340,205 @@ body {
   border-color: #e2e8f0;
 }
 
+/* 7일 예측은 관측값과 혼동되지 않도록 보라색 계열과 별도 상태 배지를 사용합니다. */
+.forecast-mode-badge[data-mode='demo'],
+.forecast-notice[data-mode='demo'] {
+  color: #92400e;
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.forecast-mode-badge[data-mode='hybrid'],
+.forecast-notice[data-mode='hybrid'] {
+  color: #6d28d9;
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+}
+
+.forecast-mode-badge[data-mode='observed'],
+.forecast-notice[data-mode='observed'] {
+  color: #155e75;
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.forecast-summary-card {
+  min-width: 0;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.forecast-summary-card > span {
+  display: block;
+  color: #64748b;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.forecast-summary-card > strong {
+  display: flex;
+  align-items: center;
+  min-height: 25px;
+  margin-top: 6px;
+  color: #102a3e;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.forecast-summary-card > small {
+  display: block;
+  margin-top: 3px;
+  color: #94a3b8;
+  font-size: 8px;
+}
+
+.forecast-summary-card[data-direction='rising'] > strong {
+  color: #dc2626;
+}
+
+.forecast-summary-card[data-direction='falling'] > strong {
+  color: #0d9488;
+}
+
+.forecast-summary-card[data-direction='steady'] > strong {
+  color: #475569;
+}
+
+.forecast-chart {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.forecast-day {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: auto 132px auto auto auto;
+  gap: 5px;
+  padding: 8px 6px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+}
+
+.forecast-day__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px;
+  color: #64748b;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.forecast-day__heading strong {
+  color: #102a3e;
+  font-size: 14px;
+}
+
+.forecast-bar-track {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 132px;
+  overflow: hidden;
+  background:
+    linear-gradient(to top, transparent 24%, #e2e8f0 25%, transparent 26%),
+    linear-gradient(to top, transparent 49%, #e2e8f0 50%, transparent 51%),
+    linear-gradient(to top, transparent 74%, #e2e8f0 75%, transparent 76%),
+    #f8fafc;
+  border-radius: 6px;
+}
+
+.forecast-bar {
+  width: 100%;
+  min-height: 8%;
+  background: var(--forecast-color);
+  opacity: 0.82;
+  border-radius: 5px 5px 2px 2px;
+  transition: height 400ms ease;
+}
+
+.forecast-day__level {
+  overflow: hidden;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forecast-day__date {
+  overflow: hidden;
+  color: #475569;
+  font-size: 8px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forecast-day small {
+  color: #94a3b8;
+  font-size: 7px;
+}
+
+.forecast-details summary {
+  list-style: none;
+}
+
+.forecast-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.forecast-details[open] .forecast-details-icon {
+  transform: rotate(180deg);
+}
+
+.forecast-details-icon {
+  transition: transform 150ms ease;
+}
+
+.forecast-table-scroll {
+  overflow-x: auto;
+}
+
+.forecast-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.forecast-table th,
+.forecast-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.forecast-table thead th {
+  color: #64748b;
+  background: #f8fafc;
+  font-weight: 700;
+}
+
+.forecast-table tbody th {
+  color: #334155;
+  font-weight: 700;
+}
+
+.forecast-table tbody td {
+  color: #64748b;
+}
+
+.forecast-table tbody tr:last-child th,
+.forecast-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
 /* 월간 달력은 데스크톱과 모바일에서 동일한 7열 구조를 유지합니다. */
 .calendar-tabs button {
   min-height: 44px;
@@ -747,6 +946,40 @@ button:focus-visible {
   .chart-axis-label,
   .chart-time-label {
     font-size: 8px;
+  }
+
+  .forecast-chart {
+    gap: 4px;
+  }
+
+  .forecast-day {
+    grid-template-rows: auto 94px auto auto auto;
+    gap: 4px;
+    padding: 6px 3px;
+  }
+
+  .forecast-bar-track {
+    height: 94px;
+  }
+
+  .forecast-day__heading {
+    justify-content: center;
+  }
+
+  .forecast-day__heading > span {
+    display: none;
+  }
+
+  .forecast-day__heading strong {
+    font-size: 12px;
+  }
+
+  .forecast-day__date {
+    font-size: 7px;
+  }
+
+  .forecast-day small {
+    font-size: 6px;
   }
 
   .calendar-grid {
