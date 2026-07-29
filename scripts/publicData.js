@@ -1,5 +1,3 @@
-import { calculateRisk } from './risk.js';
-
 const NIFS_BASE_URL = 'https://www.nifs.go.kr/OpenAPI_json';
 const KOEM_URL =
   'https://apis.data.go.kr/B553931/service/OceansNemoService2/getOceansNemo2';
@@ -7,6 +5,15 @@ const REQUEST_TIMEOUT = 8000;
 const KOEM_REQUEST_TIMEOUT = 30000;
 const PUBLIC_CACHE_URL = './data/live-marine.json';
 const PUBLIC_CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
+const MEASUREMENT_FIELDS = [
+  'cellDensity',
+  'organism',
+  'waterTemperature',
+  'chlorophyllA',
+  'salinity',
+  'dissolvedOxygen',
+  'ph',
+];
 
 const AREA_ALIASES = {
   gijang: ['기장', '대변', '일광', '고리'],
@@ -244,7 +251,9 @@ function matchArea(location, areas) {
 function cloneAreas(areas) {
   return areas.map((area) => ({
     ...area,
-    riskBreakdown: { ...area.riskBreakdown },
+    riskBreakdown: area.riskBreakdown
+      ? { ...area.riskBreakdown }
+      : null,
     dataStatus: {
       ...area.dataStatus,
       fields: { ...area.dataStatus.fields },
@@ -254,8 +263,8 @@ function cloneAreas(areas) {
 
 function markObserved(area, field) {
   area.dataStatus.fields[field] = 'observed';
-  area.dataStatus.measurements = 'hybrid';
-  area.dataStatus.riskIndex = 'derived-hybrid';
+  area.dataStatus.measurements = 'observed';
+  area.dataStatus.riskIndex = 'unavailable';
 }
 
 function updateNumberField(area, field, value) {
@@ -263,15 +272,6 @@ function updateNumberField(area, field, value) {
   area[field] = value;
   markObserved(area, field);
   return true;
-}
-
-function recalculateRisks(areas) {
-  areas.forEach((area) => {
-    const risk = calculateRisk(area);
-    area.riskScore = risk.score;
-    area.riskLevel = risk.level;
-    area.riskBreakdown = risk.breakdown;
-  });
 }
 
 export async function fetchNifsRedTide(
@@ -609,7 +609,7 @@ function createDefaultSources(config) {
       status: 'unavailable',
       message: config.NIFS_API_KEY
         ? '연결 확인 중'
-        : '공개 데이터 캐시 없음 · 시연 데이터 사용',
+        : '공개 데이터 캐시 없음 · 자료 없음으로 표시',
     },
     {
       id: 'khoa',
@@ -625,7 +625,7 @@ function createDefaultSources(config) {
       status: 'ready',
       message: config.DATA_GO_KR_KEY
         ? '연결 확인 중'
-        : '공개 데이터 캐시 없음 · 시연 데이터 사용',
+        : '공개 데이터 캐시 없음 · 자료 없음으로 표시',
     },
     {
       id: 'map',
@@ -642,25 +642,34 @@ function mergeCachedArea(baseArea, cachedArea) {
     return cloneAreas([baseArea])[0];
   }
 
-  return {
-    ...baseArea,
-    ...cachedArea,
-    riskBreakdown: {
-      ...baseArea.riskBreakdown,
-      ...(cachedArea.riskBreakdown ?? {}),
-    },
-    dataStatus: {
-      ...baseArea.dataStatus,
-      ...(cachedArea.dataStatus ?? {}),
-      fields: {
-        ...baseArea.dataStatus.fields,
-        ...(cachedArea.dataStatus?.fields ?? {}),
-      },
-    },
-  };
+  const area = cloneAreas([baseArea])[0];
+  let observedFieldCount = 0;
+
+  MEASUREMENT_FIELDS.forEach((field) => {
+    if (cachedArea.dataStatus?.fields?.[field] !== 'observed') return;
+
+    const value = cachedArea[field];
+    const valid =
+      field === 'organism'
+        ? typeof value === 'string' && value.trim().length > 0
+        : Number.isFinite(value);
+    if (!valid) return;
+
+    area[field] = value;
+    markObserved(area, field);
+    observedFieldCount += 1;
+  });
+
+  if (observedFieldCount > 0) {
+    area.referenceTime = cachedArea.referenceTime || '관측시각 미제공';
+  }
+  area.dataStatus.officialAlert =
+    cachedArea.dataStatus?.officialAlert ?? area.dataStatus.officialAlert;
+
+  return area;
 }
 
-async function loadPublicDataCache(demoAreas, options, config) {
+async function loadPublicDataCache(baseAreas, options, config) {
   const now = options.now ?? new Date();
   const cacheUrl =
     options.cacheUrl ??
@@ -691,18 +700,31 @@ async function loadPublicDataCache(demoAreas, options, config) {
   const cachedById = new Map(
     payload.areas.map((area) => [area.id, area]),
   );
-  const areas = demoAreas.map((area) =>
+  const areas = baseAreas.map((area) =>
     mergeCachedArea(area, cachedById.get(area.id)),
   );
+  const observedFieldCount = areas.reduce(
+    (total, area) =>
+      total +
+      Object.values(area.dataStatus.fields).filter(
+        (status) => status === 'observed',
+      ).length,
+    0,
+  );
   const ageInHours = Math.max(0, Math.floor(age / (60 * 60 * 1000)));
+  const cacheWarnings = Array.isArray(payload.warnings)
+    ? payload.warnings.filter(
+        (warning) => !/시연|예시|혼합/.test(String(warning)),
+      )
+    : [];
   const warnings = [
-    `GitHub Actions가 수집한 공개 데이터 캐시를 사용합니다. 마지막 수집: ${ageInHours}시간 전`,
-    ...(Array.isArray(payload.warnings) ? payload.warnings : []),
+    `공식 관측값만 표시합니다. 마지막 수집: ${ageInHours}시간 전`,
+    ...cacheWarnings,
   ];
 
   return {
     areas,
-    mode: payload.mode === 'hybrid' ? 'hybrid' : 'demo',
+    mode: observedFieldCount > 0 ? 'official' : 'unavailable',
     sources: Array.isArray(payload.sources)
       ? payload.sources
       : createDefaultSources(config),
@@ -720,9 +742,9 @@ async function loadPublicDataCache(demoAreas, options, config) {
 }
 
 /**
- * 가능한 공공데이터를 병렬 호출하고 실패한 자료는 시연 데이터로 유지합니다.
+ * 가능한 공공데이터를 병렬 호출하고 공식 응답이 없는 항목은 비워 둡니다.
  */
-export async function loadPublicMarineData(demoAreas, options = {}) {
+export async function loadPublicMarineData(baseAreas, options = {}) {
   const config = { ...getConfig(), ...(options.config ?? {}) };
   const fetchImplementation = options.fetchImplementation;
   const now = options.now ?? new Date();
@@ -733,7 +755,7 @@ export async function loadPublicMarineData(demoAreas, options = {}) {
     (options.preferCache || typeof window !== 'undefined')
   ) {
     try {
-      return await loadPublicDataCache(demoAreas, options, config);
+      return await loadPublicDataCache(baseAreas, options, config);
     } catch (error) {
       cacheError = error;
     }
@@ -741,14 +763,14 @@ export async function loadPublicMarineData(demoAreas, options = {}) {
 
   const startDate = new Date(now);
   startDate.setDate(now.getDate() - 30);
-  const areas = cloneAreas(demoAreas);
+  const areas = cloneAreas(baseAreas);
   const sources = createDefaultSources(config);
   const warnings = [];
   const operations = [];
 
   if (cacheError) {
     warnings.push(
-      '공개 데이터 캐시를 읽지 못해 시연 데이터로 안전하게 전환했습니다.',
+      '공개 데이터 캐시를 읽지 못해 공식 관측값을 표시할 수 없습니다.',
     );
   }
 
@@ -820,7 +842,7 @@ export async function loadPublicMarineData(demoAreas, options = {}) {
       .filter((result) => result && !result.ok)
       .map((result) => describeError(result.error));
     nifsSource.status = 'unavailable';
-    nifsSource.message = '연결 실패 · 시연 데이터로 안전 전환';
+    nifsSource.message = '연결 실패 · 관련 항목은 자료 없음';
     warnings.push(`NIFS 연결 실패: ${[...new Set(errors)].join(', ')}`);
   }
 
@@ -845,11 +867,9 @@ export async function loadPublicMarineData(demoAreas, options = {}) {
           : 'API 연결 · 부산 후보 정점 응답 없음';
   } else if (koemResult && !koemResult.ok) {
     koemSource.status = 'unavailable';
-    koemSource.message = '연결 실패 · 관련 지표는 예시값 유지';
+    koemSource.message = '연결 실패 · 관련 항목은 자료 없음';
     warnings.push(`KOEM 연결 실패: ${describeError(koemResult.error)}`);
   }
-
-  recalculateRisks(areas);
 
   const uniqueOfficialObservations = [
     ...new Map(
@@ -859,15 +879,15 @@ export async function loadPublicMarineData(demoAreas, options = {}) {
       ]),
     ).values(),
   ];
-  const mode = observedFieldCount > 0 ? 'hybrid' : 'demo';
+  const mode = observedFieldCount > 0 ? 'official' : 'unavailable';
 
-  if (mode === 'demo') {
+  if (mode === 'unavailable') {
     warnings.unshift(
-      '공공 관측값이 반영되지 않아 모든 해양 수치는 예시 데이터입니다.',
+      '연결된 공식 관측값이 없습니다. 임의 수치 대신 자료 없음으로 표시합니다.',
     );
   } else {
     warnings.unshift(
-      '일부 공식 관측값만 반영됐으며 나머지 환경지표와 7일 전망은 시연·실험 데이터입니다.',
+      '공식 관측값만 반영했습니다. 자료가 없는 지표는 비워 두며 위험지수와 미래 예측은 산정하지 않습니다.',
     );
   }
 
