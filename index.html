@@ -41,7 +41,7 @@
 
     <!-- 무료 Lucide 아이콘 CDN을 사용합니다. -->
     <script src="https://unpkg.com/lucide@0.468.0"></script>
-    <link rel="stylesheet" href="./styles.css?v=20260729-marine-v2" />
+    <link rel="stylesheet" href="./styles.css?v=20260729-unified-v3" />
   </head>
   <body class="min-h-screen bg-slate-100 text-slate-900 antialiased">
     <a href="#main-content" class="skip-link">본문으로 바로가기</a>
@@ -378,7 +378,7 @@
                     aria-label="자체 위험지수 산정 상태"
                   >
                     <strong id="selected-risk-score">-</strong>
-                    <span>산정 안 함</span>
+                    <span id="selected-risk-gauge-label">계산 중</span>
                   </div>
                 </div>
               </div>
@@ -641,7 +641,7 @@
                     일별 모델 위험도
                   </h3>
                   <p class="mt-1 text-[9px] text-slate-500">
-                    막대는 날짜별 해양예보를 반영한 자체 0~100 모델 위험지수입니다.
+                    상세 카드·오늘 요약·막대는 모두 같은 0~100 계산식을 사용합니다.
                   </p>
                 </div>
                 <span class="shrink-0 text-[8px] font-bold text-slate-400">
@@ -794,6 +794,6 @@
     </footer>
 
     <script src="./scripts/config.js"></script>
-    <script type="module" src="./scripts/app.js?v=20260729-marine-v2"></script>
+    <script type="module" src="./scripts/app.js?v=20260729-unified-v3"></script>
   </body>
 </html>
