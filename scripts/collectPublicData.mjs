@@ -36,7 +36,8 @@ const state = await loadPublicMarineData(marineAreas, {
 
 const connectedPublicSources = state.sources.filter(
   (source) =>
-    ['nifs', 'koem'].includes(source.id) && source.status === 'connected',
+    ['nifs', 'koem', 'busan'].includes(source.id) &&
+    source.status === 'connected',
 );
 
 if (connectedPublicSources.length === 0) {
@@ -68,7 +69,9 @@ await mkdir(dirname(outputPath), { recursive: true });
 await writeFile(outputPath, serializedPayload, 'utf8');
 
 const sourceSummary = state.sources
-  .filter((source) => ['nifs', 'khoa', 'koem'].includes(source.id))
+  .filter((source) =>
+    ['nifs', 'khoa', 'koem', 'busan'].includes(source.id),
+  )
   .map((source) => `${source.id}:${source.status}`)
   .join(', ');
 
