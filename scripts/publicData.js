@@ -4,6 +4,7 @@ const NIFS_BASE_URL = 'https://www.nifs.go.kr/OpenAPI_json';
 const KOEM_URL =
   'https://apis.data.go.kr/B553931/service/OceansNemoService2/getOceansNemo2';
 const REQUEST_TIMEOUT = 8000;
+const KOEM_REQUEST_TIMEOUT = 30000;
 const PUBLIC_CACHE_URL = './data/live-marine.json';
 const PUBLIC_CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
 
@@ -25,6 +26,17 @@ const formatDate = (date) =>
     String(date.getMonth() + 1).padStart(2, '0'),
     String(date.getDate()).padStart(2, '0'),
   ].join('');
+
+/**
+ * 공공데이터포털에서 제공하는 인코딩 키와 디코딩 키를 모두 한 번만 인코딩합니다.
+ */
+function normalizeDataGoKrKey(key) {
+  try {
+    return decodeURIComponent(key);
+  } catch {
+    return key;
+  }
+}
 
 function decodeXmlText(value) {
   return value
@@ -102,16 +114,20 @@ function assertJsonSuccess(payload) {
   throw new Error(`API 응답 오류: ${resultMessage || resultCode}`);
 }
 
-async function fetchJson(url, fetchImplementation = fetch) {
+async function fetchJson(
+  url,
+  fetchImplementation = fetch,
+  requestTimeout = REQUEST_TIMEOUT,
+) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+  const timeout = setTimeout(() => controller.abort(), requestTimeout);
 
   try {
     const response = await fetchImplementation(url, {
       signal: controller.signal,
       cache: 'no-store',
       headers: {
-        Accept: 'application/json',
+        Accept: 'application/json, application/xml, text/xml',
       },
     });
 
@@ -271,24 +287,30 @@ export async function fetchNifsRisa(options = {}) {
   );
 }
 
-export async function fetchKoemMeasurements(year, options = {}) {
+export async function fetchKoemMeasurements(options = {}) {
   const key = options.key ?? getConfig().DATA_GO_KR_KEY?.trim();
   if (!key) throw new Error('공공데이터포털 API 키가 설정되지 않았습니다.');
 
+  const endDate = options.endDate ?? new Date();
+  const startDate = new Date(endDate);
+  startDate.setDate(startDate.getDate() - (options.lookbackDays ?? 180));
+
   const url = new URL(KOEM_URL);
-  url.searchParams.set('serviceKey', key);
+  url.searchParams.set('serviceKey', normalizeDataGoKrKey(key));
   url.searchParams.set('pageNo', '1');
-  url.searchParams.set('numOfRows', '500');
-  url.searchParams.set('syr', String(year));
-  url.searchParams.set('sdate', `${year}0101`);
-  url.searchParams.set(
-    'edate',
-    formatDate(options.endDate ?? new Date()),
-  );
+  url.searchParams.set('numOfRows', '100');
+  url.searchParams.set('resultType', 'xml');
+  url.searchParams.set('_type', 'xml');
+  url.searchParams.set('sdate', formatDate(startDate));
+  url.searchParams.set('edate', formatDate(endDate));
   url.searchParams.set('OCEAN_NM', '남해');
 
   return findRecordArray(
-    await fetchJson(url, options.fetchImplementation),
+    await fetchJson(
+      url,
+      options.fetchImplementation,
+      options.timeout ?? KOEM_REQUEST_TIMEOUT,
+    ),
   );
 }
 
@@ -682,7 +704,7 @@ export async function loadPublicMarineData(demoAreas, options = {}) {
   if (config.DATA_GO_KR_KEY?.trim()) {
     operations.push({
       id: 'koem',
-      request: fetchKoemMeasurements(now.getFullYear(), {
+      request: fetchKoemMeasurements({
         key: config.DATA_GO_KR_KEY.trim(),
         fetchImplementation,
         endDate: now,
