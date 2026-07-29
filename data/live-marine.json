@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-29T03:55:41.038Z",
+  "generatedAt": "2026-07-29T04:08:43.705Z",
   "collector": "github-actions",
   "mode": "official",
   "areas": [
@@ -46,29 +46,29 @@
       "longitude": 129.1776,
       "cellDensity": null,
       "organism": null,
-      "waterTemperature": null,
-      "chlorophyllA": null,
-      "salinity": null,
-      "dissolvedOxygen": null,
-      "ph": null,
+      "waterTemperature": 18.32,
+      "chlorophyllA": 0.49,
+      "salinity": 32.65,
+      "dissolvedOxygen": 7.15,
+      "ph": 8.06,
       "recentCellGrowth": null,
       "riskScore": null,
       "riskLevel": "산정 불가",
       "riskBreakdown": null,
-      "referenceTime": "공식 관측자료 없음",
+      "referenceTime": "2024년 연평균 · 부산시 해운대 정점",
       "dataStatus": {
-        "measurements": "unavailable",
+        "measurements": "observed",
         "riskIndex": "unavailable",
         "officialAlert": "not-connected",
         "forecast": "unavailable",
         "fields": {
           "cellDensity": "unavailable",
           "organism": "unavailable",
-          "waterTemperature": "unavailable",
-          "chlorophyllA": "unavailable",
-          "salinity": "unavailable",
-          "dissolvedOxygen": "unavailable",
-          "ph": "unavailable"
+          "waterTemperature": "observed",
+          "chlorophyllA": "observed",
+          "salinity": "observed",
+          "dissolvedOxygen": "observed",
+          "ph": "observed"
         }
       }
     },
@@ -80,29 +80,29 @@
       "longitude": 129.1258,
       "cellDensity": null,
       "organism": null,
-      "waterTemperature": null,
-      "chlorophyllA": null,
-      "salinity": null,
-      "dissolvedOxygen": null,
-      "ph": null,
+      "waterTemperature": 17.9,
+      "chlorophyllA": 0.78,
+      "salinity": 33.9,
+      "dissolvedOxygen": 7.35,
+      "ph": 7.76,
       "recentCellGrowth": null,
       "riskScore": null,
       "riskLevel": "산정 불가",
       "riskBreakdown": null,
-      "referenceTime": "공식 관측자료 없음",
+      "referenceTime": "2024년 연평균 · 부산시 광안리해수욕장 정점",
       "dataStatus": {
-        "measurements": "unavailable",
+        "measurements": "observed",
         "riskIndex": "unavailable",
         "officialAlert": "not-connected",
         "forecast": "unavailable",
         "fields": {
           "cellDensity": "unavailable",
           "organism": "unavailable",
-          "waterTemperature": "unavailable",
-          "chlorophyllA": "unavailable",
-          "salinity": "unavailable",
-          "dissolvedOxygen": "unavailable",
-          "ph": "unavailable"
+          "waterTemperature": "observed",
+          "chlorophyllA": "observed",
+          "salinity": "observed",
+          "dissolvedOxygen": "observed",
+          "ph": "observed"
         }
       }
     },
@@ -214,8 +214,8 @@
       "id": "nifs",
       "agency": "국립수산과학원",
       "dataset": "적조정보 · 실시간 해양수산환경",
-      "status": "connected",
-      "message": "API 연결 · 기간 내 부산 매칭 자료 없음"
+      "status": "unavailable",
+      "message": "연결 실패 · 관련 항목은 자료 없음"
     },
     {
       "id": "khoa",
@@ -232,6 +232,13 @@
       "message": "API 연결 · 부산 정점 11곳 환경값 반영"
     },
     {
+      "id": "busan",
+      "agency": "부산광역시 보건환경연구원",
+      "dataset": "부산 해양환경측정망",
+      "status": "connected",
+      "message": "2024년 공식 연평균 자료 반영 · 실시간 자료 아님"
+    },
+    {
       "id": "map",
       "agency": "사용자 제공 이미지",
       "dataset": "부산 행정구역 PNG 지도",
@@ -240,7 +247,10 @@
     }
   ],
   "warnings": [
-    "공식 관측값만 반영했습니다. 자료가 없는 지표는 비워 두며 위험지수와 미래 예측은 산정하지 않습니다."
+    "공식 관측값만 반영했습니다. 자료가 없는 지표는 비워 두며 위험지수와 미래 예측은 산정하지 않습니다.",
+    "NIFS 연결 실패: 요청 시간 초과, API 응답 오류: invalid license",
+    "해운대·광안리는 부산시 2024년 공식 연평균 자료이며 실시간 값이 아닙니다.",
+    "부산시 해양환경측정망 API 연결 실패: HTTP 403"
   ],
   "officialObservations": []
 }
