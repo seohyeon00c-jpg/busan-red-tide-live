@@ -1,5 +1,3 @@
-import { getRiskColor } from './risk.js';
-
 const MAP_IMAGE_URL = './assets/busan-district-map.png';
 
 /**
@@ -14,6 +12,12 @@ const MAP_POSITIONS = Object.freeze({
   dadaepo: { left: 37, top: 86 },
   gadeokdo: { left: 17, top: 82 },
 });
+
+function getObservedFieldCount(area) {
+  return Object.values(area.dataStatus?.fields ?? {}).filter(
+    (status) => status === 'observed',
+  ).length;
+}
 
 function showMapError() {
   const errorElement = document.querySelector('#map-error');
@@ -43,14 +47,22 @@ function createMarker(area, onAreaSelect) {
   const position = MAP_POSITIONS[area.id];
   if (!position) return null;
 
+  const observedFieldCount = getObservedFieldCount(area);
+  const hasObservation = observedFieldCount > 0;
   const marker = document.createElement('button');
   marker.type = 'button';
   marker.className = 'simple-map-marker';
   marker.dataset.areaId = area.id;
   marker.style.left = `${position.left}%`;
   marker.style.top = `${position.top}%`;
-  marker.style.setProperty('--marker-color', getRiskColor(area.riskScore));
-  marker.setAttribute('aria-label', `${area.name} 해역, 자체 위험지수 ${area.riskScore}점`);
+  marker.style.setProperty(
+    '--marker-color',
+    hasObservation ? '#0f766e' : '#94a3b8',
+  );
+  marker.setAttribute(
+    'aria-label',
+    `${area.name} 해역, 공식 관측항목 ${observedFieldCount}개`,
+  );
   marker.setAttribute('aria-pressed', 'false');
 
   const label = document.createElement('span');
@@ -59,7 +71,7 @@ function createMarker(area, onAreaSelect) {
 
   const dot = document.createElement('span');
   dot.className = 'simple-map-marker__dot';
-  dot.textContent = area.riskScore;
+  dot.textContent = hasObservation ? observedFieldCount : '–';
   dot.setAttribute('aria-hidden', 'true');
 
   marker.append(label, dot);

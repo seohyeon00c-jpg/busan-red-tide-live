@@ -1,80 +1,76 @@
-import {
-  createDemoHourlyTrend,
-  marineAreas as demoMarineAreas,
-} from './data.js';
-import {
-  RISK_WEIGHTS,
-  compareOfficialThreshold,
-  getRiskColor,
-} from './risk.js';
+import { marineAreas } from './data.js';
+import { compareOfficialThreshold } from './risk.js';
 import { initializeBusanMap } from './map.js';
 import { createDataBriefing } from './briefing.js';
 import {
   initializeMonthlyRiskCalendar,
 } from './calendar.js';
 import { loadPublicMarineData } from './publicData.js';
-import { createSevenDayForecast } from './forecast.js';
 
 const numberFormatter = new Intl.NumberFormat('ko-KR');
-let activeAreas = demoMarineAreas;
+let activeAreas = marineAreas;
 let dashboardState;
 let selectedAreaId = activeAreas[0]?.id;
 let mapController;
 
-const CHART = Object.freeze({
-  width: 760,
-  height: 280,
-  padding: {
-    top: 28,
-    right: 52,
-    bottom: 38,
-    left: 54,
-  },
-});
+function getObservedFieldCount(area) {
+  return Object.values(area.dataStatus?.fields ?? {}).filter(
+    (status) => status === 'observed',
+  ).length;
+}
 
-const riskTextClass = (score) => {
-  if (score >= 80) return 'text-red-900';
-  if (score >= 60) return 'text-red-600';
-  if (score >= 40) return 'text-orange-600';
-  if (score >= 20) return 'text-amber-600';
-  return 'text-teal-600';
-};
+function getObservedAreas(areas) {
+  return areas.filter((area) => getObservedFieldCount(area) > 0);
+}
+
+function getObservedTemperatureAverage(areas) {
+  const temperatures = areas
+    .filter(
+      (area) =>
+        area.dataStatus?.fields?.waterTemperature === 'observed' &&
+        Number.isFinite(area.waterTemperature),
+    )
+    .map((area) => area.waterTemperature);
+
+  if (temperatures.length === 0) return '–';
+  return (
+    temperatures.reduce((sum, temperature) => sum + temperature, 0) /
+    temperatures.length
+  ).toFixed(1);
+}
 
 const statDefinitions = [
   {
-    icon: 'gauge',
-    label: '최고 자체 위험지수',
-    value: (areas) => `${Math.max(...areas.map((area) => area.riskScore))}`,
-    unit: '/100',
-    note: '시연 계산값',
-    color: 'rose',
-  },
-  {
-    icon: 'thermometer-sun',
-    label: '6개 해역 평균 수온',
-    value: (areas) =>
-      (
-        areas.reduce((sum, area) => sum + area.waterTemperature, 0) /
-        areas.length
-      ).toFixed(1),
-    unit: '℃',
-    note: '예시 관측값 평균',
-    color: 'sky',
-  },
-  {
-    icon: 'map-pin',
-    label: '모니터링 대상',
-    value: (areas) => areas.length,
+    icon: 'database',
+    label: '공식 관측 해역',
+    value: (areas) => getObservedAreas(areas).length,
     unit: '개 해역',
-    note: '실제 위·경도 정의',
+    note: '공식값이 1개 이상 연결된 해역',
     color: 'teal',
   },
   {
+    icon: 'thermometer-sun',
+    label: '공식 관측 평균 수온',
+    value: getObservedTemperatureAverage,
+    unit: '℃',
+    note: '공식 수온이 있는 해역만 평균',
+    color: 'sky',
+  },
+  {
+    icon: 'list-checks',
+    label: '공식 관측 항목',
+    value: (areas) =>
+      areas.reduce((total, area) => total + getObservedFieldCount(area), 0),
+    unit: '개',
+    note: '예시·임의 보간값 제외',
+    color: 'rose',
+  },
+  {
     icon: 'shield-alert',
-    label: '공식 특보',
-    value: () => '미연결',
-    unit: '',
-    note: '임의 발령 표시 없음',
+    label: 'NIFS 적조 확인',
+    value: () => dashboardState?.officialObservations?.length ?? 0,
+    unit: '건',
+    note: '현재 월 연결 기록',
     color: 'slate',
   },
 ];
@@ -84,15 +80,6 @@ const iconColorClasses = {
   sky: 'bg-sky-50 text-sky-600',
   teal: 'bg-teal-50 text-teal-600',
   slate: 'bg-slate-100 text-slate-600',
-};
-
-const weightLabels = {
-  cellDensity: '세포밀도',
-  temperature: '수온 적합성',
-  chlorophyllA: 'Chl-a',
-  salinity: '염분',
-  dissolvedOxygen: '용존산소',
-  growthTrend: '최근 증가 추세',
 };
 
 const detailMetricDefinitions = [
@@ -183,46 +170,45 @@ function getFieldSource(area, field) {
         value: 'observed',
       }
     : {
-        label: '예시',
-        value: 'demo',
+        label: '자료 없음',
+        value: 'unavailable',
       };
 }
 
 function renderSystemState() {
-  const hybrid = dashboardState.mode === 'hybrid';
+  const official = dashboardState.mode === 'official';
   const headerStatus = document.querySelector('#header-system-status');
   const banner = document.querySelector('#system-mode-banner');
   const sourceModeBadge = document.querySelector('#source-mode-badge');
   const footerDataStatus = document.querySelector('#footer-data-status');
 
   headerStatus.dataset.mode = dashboardState.mode;
-  document.querySelector('#header-system-status-text').textContent = hybrid
-    ? '공식·예시 혼합모드'
-    : '시연모드';
+  document.querySelector('#header-system-status-text').textContent = official
+    ? '공식 데이터 모드'
+    : '공식자료 없음';
 
   banner.dataset.mode = dashboardState.mode;
-  document.querySelector('#system-mode-title').textContent = hybrid
-    ? '일부 공식 관측값과 예시 환경값을 함께 표시합니다.'
-    : '현재 모든 해양 수치는 예시 데이터입니다.';
+  document.querySelector('#system-mode-title').textContent = official
+    ? '공공기관의 공식 관측값만 표시합니다.'
+    : '현재 연결된 공식 관측값이 없습니다.';
   document.querySelector('#system-mode-message').textContent =
     dashboardState.warnings[0];
-  document.querySelector('#system-mode-label').textContent = hybrid
-    ? 'HYBRID DATA'
-    : 'DEMO DATA';
+  document.querySelector('#system-mode-label').textContent = official
+    ? 'OFFICIAL DATA'
+    : 'NO OFFICIAL DATA';
 
-  sourceModeBadge.textContent = hybrid
-    ? '공식·예시 혼합모드'
-    : '안전한 시연모드';
+  sourceModeBadge.textContent = official
+    ? '공식 데이터 전용'
+    : '공식자료 없음';
   sourceModeBadge.dataset.mode = dashboardState.mode;
 
-  document.querySelector('#hero-reference-label').textContent = hybrid
+  document.querySelector('#hero-reference-label').textContent = official
     ? `${formatReferenceTime(dashboardState.updatedAt)} 연결 확인`
-    : '2026.07.28 초기 시연 스냅샷';
+    : '공식 관측자료 없음';
 
   if (footerDataStatus) {
-    footerDataStatus.textContent = hybrid
-      ? '연구·교육용 프로토타입 · 일부 공식 관측값과 예시 데이터 혼합'
-      : '연구·교육용 프로토타입 · 모든 현재 수치는 예시 데이터';
+    footerDataStatus.textContent =
+      '연구·교육용 프로토타입 · 공식 공공데이터만 표시 · 자료 없는 항목은 비움';
   }
 }
 
@@ -366,25 +352,29 @@ function renderToday() {
 
 function renderTopRiskArea() {
   const topArea = [...activeAreas].sort(
-    (first, second) => second.riskScore - first.riskScore,
+    (first, second) =>
+      getObservedFieldCount(second) - getObservedFieldCount(first),
   )[0];
-  const color = getRiskColor(topArea.riskScore);
+  const observedFieldCount = getObservedFieldCount(topArea);
+  const color = observedFieldCount > 0 ? '#14b8a6' : '#94a3b8';
 
   document.querySelector('#top-area-name').textContent = topArea.name;
-  document.querySelector('#top-area-subtitle').textContent = topArea.detail;
-  document.querySelector('#top-risk-score').textContent = topArea.riskScore;
+  document.querySelector('#top-area-subtitle').textContent =
+    observedFieldCount > 0
+      ? `공식 관측항목 ${observedFieldCount}개 연결`
+      : '연결된 공식 관측값이 없습니다.';
+  document.querySelector('#top-risk-score').textContent = observedFieldCount;
   document.querySelector('#top-risk-score').style.color = color;
-  document.querySelector('#top-risk-level').textContent = topArea.riskLevel;
+  document.querySelector('#top-risk-level').textContent =
+    observedFieldCount > 0 ? '공식 관측' : '자료 없음';
   document.querySelector('#top-risk-level').style.color = color;
-  document.querySelector('#top-risk-bar').style.width = `${topArea.riskScore}%`;
+  document.querySelector('#top-risk-bar').style.width =
+    `${(observedFieldCount / detailMetricDefinitions.length) * 100}%`;
   document.querySelector('#top-risk-bar').style.backgroundColor = color;
   document.querySelector('#top-data-note').innerHTML = `
     <i data-lucide="info" class="mt-0.5 h-3.5 w-3.5 shrink-0"></i>
-    ${
-      topArea.dataStatus.measurements === 'hybrid'
-        ? '일부 공식 관측값과 예시 환경값을 함께 사용한 파생지수입니다. 공식 특보가 아닙니다.'
-        : '이 값은 예시 해양환경 자료로 계산한 시연용 파생지수입니다. 실제 관측이나 공식 특보가 아닙니다.'
-    }
+    공식 응답이 없는 수치는 표시하지 않습니다. 세포밀도·Chl-a 등 필수값이
+    부족해 자체 위험지수와 미래 예측은 산정하지 않습니다.
   `;
 }
 
@@ -401,7 +391,7 @@ function formatReferenceTime(value) {
 }
 
 function renderAreaDetail(area) {
-  const riskColor = getRiskColor(area.riskScore);
+  const riskColor = '#94a3b8';
   const riskGauge = document.querySelector('#selected-risk-gauge');
   const metrics = document.querySelector('#detail-metrics');
   const dataBadge = document.querySelector('#selected-data-badge');
@@ -409,31 +399,38 @@ function renderAreaDetail(area) {
 
   document.querySelector('#selected-area-name').textContent = area.name;
   document.querySelector('#selected-area-detail').textContent = area.detail;
-  document.querySelector('#selected-risk-score').textContent = area.riskScore;
+  document.querySelector('#selected-risk-score').textContent = '–';
   document.querySelector('#selected-risk-level').textContent =
-    `${area.riskLevel} · ${area.riskScore}점`;
+    '필수 공식자료 부족 · 산정 안 함';
   document.querySelector('#selected-risk-level').style.color = riskColor;
-  document.querySelector('#selected-organism').textContent = area.organism;
+  document.querySelector('#selected-organism').textContent =
+    organismSource.value === 'observed' ? area.organism : '자료 없음';
   document.querySelector('#selected-organism-source').textContent =
     organismSource.label;
   document.querySelector('#selected-organism-source').dataset.source =
     organismSource.value;
   document.querySelector('#selected-reference-time').textContent =
     `${formatReferenceTime(area.referenceTime)} 기준`;
+  const densityObserved =
+    area.dataStatus?.fields?.cellDensity === 'observed' &&
+    Number.isFinite(area.cellDensity);
   document.querySelector('#selected-official-comparison').textContent =
-    `공식 세포밀도 기준 비교 · ${compareOfficialThreshold(area.cellDensity)}`;
+    densityObserved
+      ? `공식 세포밀도 기준 비교 · ${compareOfficialThreshold(area.cellDensity)}`
+      : '공식 세포밀도 자료 없음 · 기준 비교 불가';
 
   riskGauge.style.setProperty('--risk-color', riskColor);
-  riskGauge.style.setProperty('--risk-angle', `${area.riskScore * 3.6}deg`);
-  dataBadge.textContent =
-    area.dataStatus.measurements === 'hybrid'
-      ? '공식 관측·예시 혼합 데이터'
-      : '시연모드 · 예시 데이터';
+  riskGauge.style.setProperty('--risk-angle', '0deg');
+  dataBadge.textContent = getObservedFieldCount(area) > 0
+    ? '공식 관측 데이터'
+    : '공식 관측자료 없음';
   dataBadge.dataset.mode = area.dataStatus.measurements;
 
   metrics.innerHTML = detailMetricDefinitions
     .map((metric) => {
       const source = getFieldSource(area, metric.key);
+      const hasValue =
+        source.value === 'observed' && Number.isFinite(area[metric.key]);
       return `
         <div class="metric-card grid grid-cols-[auto_1fr] items-center gap-x-2 rounded-lg border border-slate-200 p-2.5">
           <span class="row-span-2 grid h-8 w-8 place-items-center rounded-md bg-teal-50 text-teal-700">
@@ -461,8 +458,12 @@ function renderAreaDetail(area) {
             </span>
           </span>
           <strong class="text-sm font-extrabold text-ocean-900">
-            ${metric.format(area[metric.key])}
-            <small class="text-[7px] font-medium text-slate-400">${metric.unit}</small>
+            ${hasValue ? metric.format(area[metric.key]) : '자료 없음'}
+            ${
+              hasValue
+                ? `<small class="text-[7px] font-medium text-slate-400">${metric.unit}</small>`
+                : ''
+            }
           </strong>
         </div>
       `;
@@ -472,177 +473,6 @@ function renderAreaDetail(area) {
   if (window.lucide) {
     window.lucide.createIcons();
   }
-}
-
-function createChartPoints(values, minimum, maximum) {
-  const chartWidth =
-    CHART.width - CHART.padding.left - CHART.padding.right;
-  const chartHeight =
-    CHART.height - CHART.padding.top - CHART.padding.bottom;
-
-  return values.map((value, index) => ({
-    x:
-      CHART.padding.left +
-      (index / Math.max(1, values.length - 1)) * chartWidth,
-    y:
-      CHART.padding.top +
-      ((maximum - value) / Math.max(1, maximum - minimum)) * chartHeight,
-  }));
-}
-
-function pointsToAttribute(points) {
-  return points.map((point) => `${point.x},${point.y}`).join(' ');
-}
-
-function renderTrendChart(area) {
-  const areaIndex = activeAreas.findIndex((item) => item.id === area.id);
-  const trend = createDemoHourlyTrend(area, Math.max(0, areaIndex));
-  const chartElement = document.querySelector('#trend-chart');
-  if (!trend?.length || !chartElement) return;
-
-  const densityValues = trend.map((point) => point.cellDensity);
-  const temperatureValues = trend.map((point) => point.waterTemperature);
-  const densityMaximum = Math.max(20, ...densityValues) * 1.15;
-  const temperatureMinimum = Math.floor(
-    Math.min(...temperatureValues) - 0.5,
-  );
-  const temperatureMaximum = Math.ceil(
-    Math.max(...temperatureValues) + 0.5,
-  );
-  const densityPoints = createChartPoints(
-    densityValues,
-    0,
-    densityMaximum,
-  );
-  const temperaturePoints = createChartPoints(
-    temperatureValues,
-    temperatureMinimum,
-    temperatureMaximum,
-  );
-  const chartBottom = CHART.height - CHART.padding.bottom;
-  const chartRight = CHART.width - CHART.padding.right;
-  const latestDensityPoint = densityPoints.at(-1);
-  const latestTemperaturePoint = temperaturePoints.at(-1);
-
-  document.querySelector('#trend-title').textContent =
-    `${area.name} 세포밀도·수온 변화`;
-  document.querySelector('#trend-current-density').textContent =
-    numberFormatter.format(area.cellDensity);
-  document.querySelector('#trend-current-temperature').textContent =
-    area.waterTemperature.toFixed(1);
-  document.querySelector('#trend-growth').textContent =
-    `${area.recentCellGrowth > 0 ? '+' : ''}${area.recentCellGrowth}%`;
-  document.querySelector('#trend-growth').style.color =
-    area.recentCellGrowth >= 20 ? '#dc2626' : '#0f766e';
-  chartElement.setAttribute(
-    'aria-label',
-    `${area.name} 해역의 24시간 세포밀도와 수온 변화 시연 그래프`,
-  );
-
-  const gridLines = Array.from({ length: 5 }, (_, index) => {
-    const ratio = index / 4;
-    const y =
-      CHART.padding.top +
-      ratio * (CHART.height - CHART.padding.top - CHART.padding.bottom);
-    const densityLabel = Math.round(densityMaximum * (1 - ratio));
-    const temperatureLabel = (
-      temperatureMaximum -
-      (temperatureMaximum - temperatureMinimum) * ratio
-    ).toFixed(1);
-
-    return `
-      <line
-        class="chart-grid-line"
-        x1="${CHART.padding.left}"
-        x2="${chartRight}"
-        y1="${y}"
-        y2="${y}"
-      ></line>
-      <text
-        class="chart-axis-label"
-        x="${CHART.padding.left - 9}"
-        y="${y + 3}"
-        text-anchor="end"
-      >${densityLabel}</text>
-      <text
-        class="chart-axis-label"
-        x="${chartRight + 9}"
-        y="${y + 3}"
-        text-anchor="start"
-      >${temperatureLabel}</text>
-    `;
-  }).join('');
-
-  const timeLabels = trend
-    .map((point, index) => {
-      if (index % 4 !== 0 && index !== trend.length - 1) return '';
-      const x = densityPoints[index].x;
-      return `
-        <text
-          class="chart-time-label"
-          x="${x}"
-          y="${CHART.height - 13}"
-          text-anchor="middle"
-        >${point.time}</text>
-      `;
-    })
-    .join('');
-
-  chartElement.innerHTML = `
-    <svg
-      viewBox="0 0 ${CHART.width} ${CHART.height}"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <defs>
-        <linearGradient id="density-gradient" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stop-color="#ef4444" stop-opacity="0.25"></stop>
-          <stop offset="100%" stop-color="#ef4444" stop-opacity="0"></stop>
-        </linearGradient>
-      </defs>
-      ${gridLines}
-      <text
-        class="chart-axis-label chart-axis-title"
-        x="${CHART.padding.left}"
-        y="15"
-        fill="#dc2626"
-      >cells/mL</text>
-      <text
-        class="chart-axis-label chart-axis-title"
-        x="${chartRight}"
-        y="15"
-        fill="#0284c7"
-        text-anchor="end"
-      >수온 ℃</text>
-      <polygon
-        class="chart-density-area"
-        points="${CHART.padding.left},${chartBottom} ${pointsToAttribute(densityPoints)} ${chartRight},${chartBottom}"
-      ></polygon>
-      <polyline
-        class="chart-density-line"
-        points="${pointsToAttribute(densityPoints)}"
-      ></polyline>
-      <polyline
-        class="chart-temperature-line"
-        points="${pointsToAttribute(temperaturePoints)}"
-      ></polyline>
-      <circle
-        class="chart-latest-point"
-        cx="${latestDensityPoint.x}"
-        cy="${latestDensityPoint.y}"
-        r="4"
-        fill="#ef4444"
-      ></circle>
-      <circle
-        class="chart-latest-point"
-        cx="${latestTemperaturePoint.x}"
-        cy="${latestTemperaturePoint.y}"
-        r="4"
-        fill="#0ea5e9"
-      ></circle>
-      ${timeLabels}
-    </svg>
-  `;
 }
 
 function renderDataBriefing(area) {
@@ -677,145 +507,6 @@ function renderDataBriefing(area) {
   }
 }
 
-function renderSevenDayForecast(area) {
-  const forecast = createSevenDayForecast(area);
-  const modeBadge = document.querySelector('#forecast-mode-badge');
-  const notice = document.querySelector('#forecast-notice');
-  const summary = document.querySelector('#forecast-summary');
-  const chart = document.querySelector('#forecast-chart');
-  const tableBody = document.querySelector('#forecast-table-body');
-  const assumptions = document.querySelector('#forecast-assumptions');
-
-  if (
-    !modeBadge ||
-    !notice ||
-    !summary ||
-    !chart ||
-    !tableBody ||
-    !assumptions
-  ) {
-    return;
-  }
-
-  document.querySelector('#forecast-area-title').textContent =
-    `${area.name} 해역 7일 적조 위험 전망`;
-  document.querySelector('#forecast-model-version').textContent =
-    forecast.modelVersion;
-  document.querySelector('#forecast-reference-time').textContent =
-    `입력자료 ${formatReferenceTime(forecast.referenceTime)} 기준`;
-
-  modeBadge.textContent = `${forecast.inputMode.badge} · 공식 예보 아님`;
-  modeBadge.dataset.mode = forecast.inputMode.key;
-
-  notice.dataset.mode = forecast.inputMode.key;
-  notice.innerHTML = `
-    <i data-lucide="triangle-alert" class="h-4 w-4 shrink-0"></i>
-    <p>
-      <strong>${forecast.inputMode.label}</strong>
-      ${
-        forecast.inputMode.key === 'demo'
-          ? '현재 입력값이 예시 데이터이므로 아래 7일 값도 실제 예보가 아닌 시연 결과입니다.'
-          : '연결된 관측값과 대체 데이터를 함께 사용한 실험 결과이며 공식기관 예보가 아닙니다.'
-      }
-    </p>
-  `;
-
-  const firstDay = forecast.days[0];
-  const lastDay = forecast.days[forecast.days.length - 1];
-  const directionIcon = {
-    rising: 'trending-up',
-    falling: 'trending-down',
-    steady: 'move-right',
-  }[forecast.direction.key];
-
-  summary.innerHTML = `
-    <article class="forecast-summary-card">
-      <span>D+1 위험도</span>
-      <strong style="color:${getRiskColor(firstDay.score)}">${firstDay.score}점</strong>
-      <small>${firstDay.level} · ${firstDay.lowerScore}~${firstDay.upperScore}점</small>
-    </article>
-    <article class="forecast-summary-card">
-      <span>7일 최고 전망</span>
-      <strong style="color:${getRiskColor(forecast.peak.score)}">${forecast.peak.score}점</strong>
-      <small>D+${forecast.peak.day} · ${forecast.peak.dateLabel}</small>
-    </article>
-    <article class="forecast-summary-card" data-direction="${forecast.direction.key}">
-      <span>위험도 흐름</span>
-      <strong class="flex items-center gap-1.5">
-        <i data-lucide="${directionIcon}" class="h-4 w-4"></i>
-        ${forecast.direction.label}
-      </strong>
-      <small>${forecast.direction.description}</small>
-    </article>
-    <article class="forecast-summary-card">
-      <span>D+7 모델 신뢰도</span>
-      <strong>${lastDay.confidence}%</strong>
-      <small>예측기간이 길수록 낮아짐</small>
-    </article>
-  `;
-
-  chart.innerHTML = forecast.days
-    .map((day) => {
-      const color = getRiskColor(day.score);
-
-      return `
-        <article
-          class="forecast-day"
-          role="listitem"
-          aria-label="D+${day.day} ${day.dateLabel} ${day.weekday}, 모델 위험도 ${day.score}점, 범위 ${day.lowerScore}점에서 ${day.upperScore}점"
-        >
-          <div class="forecast-day__heading">
-            <span>D+${day.day}</span>
-            <strong>${day.score}</strong>
-          </div>
-          <div class="forecast-bar-track" aria-hidden="true">
-            <span
-              class="forecast-bar"
-              style="height:${Math.max(8, day.score)}%;--forecast-color:${color}"
-            ></span>
-          </div>
-          <strong class="forecast-day__level" style="color:${color}">
-            ${day.level}
-          </strong>
-          <span class="forecast-day__date">${day.dateLabel} ${day.weekday}</span>
-          <small>${day.lowerScore}~${day.upperScore}점</small>
-        </article>
-      `;
-    })
-    .join('');
-
-  tableBody.innerHTML = forecast.days
-    .map(
-      (day) => `
-        <tr>
-          <th scope="row">D+${day.day} · ${day.dateLabel} ${day.weekday}</th>
-          <td>
-            <strong style="color:${getRiskColor(day.score)}">${day.score}점 · ${day.level}</strong>
-          </td>
-          <td>${numberFormatter.format(day.projectedCellDensity)} cells/mL</td>
-          <td>${day.projectedDailyGrowth >= 0 ? '+' : ''}${day.projectedDailyGrowth}%</td>
-          <td>${day.confidence}%</td>
-        </tr>
-      `,
-    )
-    .join('');
-
-  assumptions.innerHTML = forecast.assumptions
-    .map(
-      (assumption) => `
-        <li class="flex items-start gap-2">
-          <i data-lucide="check" class="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal-600"></i>
-          <span>${assumption}</span>
-        </li>
-      `,
-    )
-    .join('');
-
-  if (window.lucide) {
-    window.lucide.createIcons();
-  }
-}
-
 function updateAreaCardSelection() {
   document.querySelectorAll('[data-area-id]').forEach((card) => {
     card.setAttribute(
@@ -832,7 +523,6 @@ function selectArea(areaId, options = {}) {
   selectedAreaId = areaId;
   renderAreaDetail(area);
   renderDataBriefing(area);
-  renderSevenDayForecast(area);
   updateAreaCardSelection();
   mapController?.selectArea(areaId, {
     moveMap: Boolean(options.moveMap),
@@ -851,7 +541,7 @@ function renderSummary() {
               <i data-lucide="${stat.icon}" class="h-5 w-5"></i>
             </span>
             <span class="rounded bg-amber-50 px-2 py-1 text-[9px] font-bold text-amber-700">
-              ${dashboardState.mode === 'hybrid' ? '혼합 데이터' : '예시 데이터'}
+              ${dashboardState.mode === 'official' ? '공식 데이터' : '자료 없음'}
             </span>
           </div>
           <p class="mt-4 text-[10px] font-semibold text-slate-500">${stat.label}</p>
@@ -871,12 +561,21 @@ function renderAreas() {
 
   container.innerHTML = activeAreas
     .map((area) => {
-      const color = getRiskColor(area.riskScore);
-      const officialComparison = compareOfficialThreshold(area.cellDensity);
+      const observedFieldCount = getObservedFieldCount(area);
+      const color = observedFieldCount > 0 ? '#0f766e' : '#94a3b8';
+      const densityObserved =
+        area.dataStatus?.fields?.cellDensity === 'observed' &&
+        Number.isFinite(area.cellDensity);
+      const officialComparison = densityObserved
+        ? compareOfficialThreshold(area.cellDensity)
+        : '자료 없음';
       const dataModeLabel =
-        area.dataStatus.measurements === 'hybrid'
-          ? '공식 관측·예시 혼합'
-          : '시연모드 · 예시 데이터';
+        observedFieldCount > 0 ? '공식 관측 데이터' : '공식 관측자료 없음';
+      const formatAreaValue = (field, formatter) =>
+        area.dataStatus?.fields?.[field] === 'observed' &&
+        Number.isFinite(area[field])
+          ? formatter(area[field])
+          : '자료 없음';
 
       return `
         <button
@@ -895,12 +594,10 @@ function renderAreas() {
               <p class="mt-1 text-[10px] text-slate-500">${area.detail}</p>
             </div>
             <div class="text-right">
-              <strong class="block text-2xl font-extrabold ${riskTextClass(area.riskScore)}">
-                ${area.riskScore}
+              <strong class="block text-2xl font-extrabold text-teal-700">
+                ${observedFieldCount}
               </strong>
-              <span class="text-[9px] font-bold" style="color:${color}">
-                자체 ${area.riskLevel}
-              </span>
+              <span class="text-[9px] font-bold text-slate-500">공식 관측항목</span>
             </div>
           </div>
 
@@ -908,21 +605,19 @@ function renderAreas() {
             <div>
               <span class="block text-[8px] text-slate-400">세포밀도</span>
               <strong class="mt-1 block text-xs text-slate-800">
-                ${numberFormatter.format(area.cellDensity)}
-                <small class="font-normal text-slate-400">cells/mL</small>
+                ${formatAreaValue('cellDensity', (value) => `${numberFormatter.format(value)} cells/mL`)}
               </strong>
             </div>
             <div>
               <span class="block text-[8px] text-slate-400">수온</span>
               <strong class="mt-1 block text-xs text-slate-800">
-                ${area.waterTemperature.toFixed(1)}℃
+                ${formatAreaValue('waterTemperature', (value) => `${value.toFixed(1)}℃`)}
               </strong>
             </div>
             <div>
               <span class="block text-[8px] text-slate-400">Chl-a</span>
               <strong class="mt-1 block text-xs text-slate-800">
-                ${area.chlorophyllA.toFixed(1)}
-                <small class="font-normal text-slate-400">µg/L</small>
+                ${formatAreaValue('chlorophyllA', (value) => `${value.toFixed(1)} µg/L`)}
               </strong>
             </div>
           </div>
@@ -954,46 +649,21 @@ function renderAreas() {
   });
 }
 
-function renderWeights() {
-  const container = document.querySelector('#weight-grid');
-
-  container.innerHTML = Object.entries(RISK_WEIGHTS)
-    .map(
-      ([key, weight]) => `
-        <div>
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-bold text-slate-700">${weightLabels[key]}</span>
-            <strong class="text-tide-700">${Math.round(weight * 100)}%</strong>
-          </div>
-          <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
-            <div
-              data-risk-fill
-              class="h-full rounded-full bg-tide-600"
-              style="width:${weight * 100}%"
-            ></div>
-          </div>
-        </div>
-      `,
-    )
-    .join('');
-}
-
 async function initializeApp() {
   initializeMobileNavigation();
   initializeMetricHelp();
   renderToday();
-  renderWeights();
 
   try {
-    dashboardState = await loadPublicMarineData(demoMarineAreas);
+    dashboardState = await loadPublicMarineData(marineAreas);
   } catch (error) {
-    console.error('공공데이터 초기화에 실패해 시연모드로 전환합니다.', error);
-    dashboardState = await loadPublicMarineData(demoMarineAreas, {
+    console.error('공식 공공데이터 초기화에 실패했습니다.', error);
+    dashboardState = await loadPublicMarineData(marineAreas, {
       skipCache: true,
       config: {},
     });
     dashboardState.warnings.push(
-      '데이터 처리 중 예기치 않은 오류가 발생해 전체 시연모드로 전환했습니다.',
+      '데이터 처리 중 오류가 발생해 공식 관측값을 표시할 수 없습니다.',
     );
   }
   activeAreas = dashboardState.areas;
