@@ -101,6 +101,8 @@ const detailMetricDefinitions = [
     icon: 'activity',
     format: (value) => numberFormatter.format(value),
     unit: 'cells/mL',
+    description:
+      '적조생물의 양을 직접 나타내는 핵심 지표입니다. 값이 빠르게 늘수록 적조 발생·확산 가능성이 커질 수 있습니다.',
   },
   {
     key: 'waterTemperature',
@@ -108,6 +110,8 @@ const detailMetricDefinitions = [
     icon: 'thermometer',
     format: (value) => value.toFixed(1),
     unit: '℃',
+    description:
+      '코클로디니움은 대체로 24~27℃에서 증식에 유리해, 이 범위의 수온이 위험도를 높일 수 있습니다.',
   },
   {
     key: 'chlorophyllA',
@@ -115,6 +119,8 @@ const detailMetricDefinitions = [
     icon: 'flask-conical',
     format: (value) => value.toFixed(1),
     unit: 'µg/L',
+    description:
+      '식물플랑크톤 생물량을 간접적으로 보여줍니다. 높은 값은 적조생물 증식 환경을 살피는 보조 신호입니다.',
   },
   {
     key: 'salinity',
@@ -122,6 +128,8 @@ const detailMetricDefinitions = [
     icon: 'waves',
     format: (value) => value.toFixed(1),
     unit: 'PSU',
+    description:
+      '염분은 적조생물의 생존과 성장에 영향을 줍니다. 종별 적정 범위에 가까우면 증식 가능성이 커질 수 있습니다.',
   },
   {
     key: 'dissolvedOxygen',
@@ -129,6 +137,8 @@ const detailMetricDefinitions = [
     icon: 'droplets',
     format: (value) => value.toFixed(1),
     unit: 'mg/L',
+    description:
+      '적조가 심해지거나 사멸 과정이 진행되면 산소가 감소할 수 있습니다. 낮은 값은 어패류 피해 위험과 연관됩니다.',
   },
   {
     key: 'ph',
@@ -136,6 +146,8 @@ const detailMetricDefinitions = [
     icon: 'beaker',
     format: (value) => value.toFixed(2),
     unit: '',
+    description:
+      '광합성과 유기물 분해에 따라 pH가 변할 수 있습니다. 급격한 변화는 플랑크톤 활동과 수질 변화를 살피는 보조 신호입니다.',
   },
 ];
 
@@ -296,6 +308,44 @@ function initializeMobileNavigation() {
   setOpen(false);
 }
 
+function initializeMetricHelp() {
+  const metrics = document.querySelector('#detail-metrics');
+  if (!metrics) return;
+
+  const closeAll = (exceptButton) => {
+    metrics.querySelectorAll('[data-metric-help]').forEach((button) => {
+      if (button === exceptButton) return;
+      button.setAttribute('aria-expanded', 'false');
+      button.closest('.metric-help').dataset.open = 'false';
+    });
+  };
+
+  metrics.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-metric-help]');
+    if (!button) return;
+
+    const open = button.getAttribute('aria-expanded') !== 'true';
+    closeAll(button);
+    button.setAttribute('aria-expanded', String(open));
+    button.closest('.metric-help').dataset.open = String(open);
+    event.stopPropagation();
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest('.metric-help')) closeAll();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    const openButton = metrics.querySelector(
+      '[data-metric-help][aria-expanded="true"]',
+    );
+    if (!openButton) return;
+    closeAll();
+    openButton.focus();
+  });
+}
+
 function renderToday() {
   const todayElement = document.querySelector('#today-label');
   const today = new Date();
@@ -377,13 +427,30 @@ function renderAreaDetail(area) {
     .map((metric) => {
       const source = getFieldSource(area, metric.key);
       return `
-        <div class="grid grid-cols-[auto_1fr] items-center gap-x-2 rounded-lg border border-slate-200 p-2.5">
+        <div class="metric-card grid grid-cols-[auto_1fr] items-center gap-x-2 rounded-lg border border-slate-200 p-2.5">
           <span class="row-span-2 grid h-8 w-8 place-items-center rounded-md bg-teal-50 text-teal-700">
             <i data-lucide="${metric.icon}" class="h-4 w-4"></i>
           </span>
           <span class="flex items-center justify-between gap-1 text-[8px] font-medium text-slate-500">
             ${metric.label}
-            <small class="metric-source" data-source="${source.value}">${source.label}</small>
+            <span class="flex items-center gap-1">
+              <small class="metric-source" data-source="${source.value}">${source.label}</small>
+              <span class="metric-help" data-open="false">
+                <button
+                  type="button"
+                  class="metric-help-button"
+                  data-metric-help
+                  aria-expanded="false"
+                  aria-controls="metric-help-${metric.key}"
+              aria-label="${metric.label} 지표와 적조의 연관 설명"
+                >···</button>
+                <span
+                  id="metric-help-${metric.key}"
+                  class="metric-help-popover"
+                  role="tooltip"
+                >${escapeHtml(metric.description)}</span>
+              </span>
+            </span>
           </span>
           <strong class="text-sm font-extrabold text-ocean-900">
             ${metric.format(area[metric.key])}
@@ -617,7 +684,6 @@ function selectArea(areaId, options = {}) {
 
   selectedAreaId = areaId;
   renderAreaDetail(area);
-  renderTrendChart(area);
   renderDataBriefing(area);
   updateAreaCardSelection();
   mapController?.selectArea(areaId, {
@@ -770,6 +836,7 @@ function renderWeights() {
 
 async function initializeApp() {
   initializeMobileNavigation();
+  initializeMetricHelp();
   renderToday();
   renderWeights();
 

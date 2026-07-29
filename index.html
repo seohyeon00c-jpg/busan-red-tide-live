@@ -86,7 +86,7 @@
             href="#analysis"
             class="rounded-lg px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/5 hover:text-white"
           >
-            변화 분석
+            데이터 브리핑
           </a>
           <a
             href="#calendar"
@@ -136,7 +136,7 @@
       >
         <a href="#overview">서비스 소개</a>
         <a href="#monitoring">해역 지도</a>
-        <a href="#analysis">변화 분석</a>
+        <a href="#analysis">데이터 브리핑</a>
         <a href="#calendar">위험 달력</a>
         <a href="#sources">데이터 출처</a>
       </nav>
@@ -526,76 +526,11 @@
           </div>
         </section>
 
-        <!-- 선택 해역 24시간 변화와 규칙 기반 브리핑 -->
+        <!-- 선택 해역 규칙 기반 브리핑 -->
         <section
           id="analysis"
-          class="mt-6 grid scroll-mt-24 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)]"
+          class="mt-6 scroll-mt-24"
         >
-          <article
-            class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-panel sm:p-5"
-            aria-labelledby="trend-title"
-          >
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p class="text-[10px] font-extrabold tracking-[0.12em] text-tide-600">
-                  24-HOUR CHANGE
-                </p>
-                <h2 id="trend-title" class="mt-1 text-lg font-extrabold text-ocean-900">
-                  기장 세포밀도·수온 변화
-                </h2>
-                <p class="mt-1 text-[10px] text-slate-500">
-                  2026.07.27 15:00 ~ 07.28 14:00 기준
-                </p>
-              </div>
-              <span
-                class="w-fit rounded border border-amber-200 bg-amber-50 px-2 py-1 text-[9px] font-bold text-amber-700"
-              >
-                시연 그래프 · 예시 데이터
-              </span>
-            </div>
-
-            <div class="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-y border-slate-100 py-3">
-              <div class="flex items-center gap-2 text-[10px] text-slate-500">
-                <i data-lucide="activity" class="h-4 w-4 text-red-500"></i>
-                세포밀도
-                <strong id="trend-current-density" class="text-sm text-ocean-900">-</strong>
-                <small>cells/mL</small>
-              </div>
-              <div class="flex items-center gap-2 text-[10px] text-slate-500">
-                <i data-lucide="thermometer" class="h-4 w-4 text-sky-500"></i>
-                수온
-                <strong id="trend-current-temperature" class="text-sm text-ocean-900">-</strong>
-                <small>℃</small>
-              </div>
-              <div class="flex items-center gap-2 text-[10px] text-slate-500">
-                <i data-lucide="trending-up" class="h-4 w-4 text-teal-600"></i>
-                24시간 추세
-                <strong id="trend-growth" class="text-sm text-ocean-900">-</strong>
-              </div>
-            </div>
-
-            <div
-              id="trend-chart"
-              class="trend-chart mt-3"
-              role="img"
-              aria-label="선택 해역의 24시간 세포밀도와 수온 시연 그래프"
-            ></div>
-
-            <div class="mt-2 flex flex-wrap items-center gap-4 border-t border-slate-100 pt-3 text-[9px] text-slate-500">
-              <span class="inline-flex items-center gap-1.5">
-                <i class="h-0.5 w-4 bg-red-500"></i>
-                세포밀도
-              </span>
-              <span class="inline-flex items-center gap-1.5">
-                <i class="h-0.5 w-4 bg-sky-500"></i>
-                수온
-              </span>
-              <small class="sm:ml-auto">
-                실제 시간별 자료 배열로 교체할 수 있는 분리형 구조
-              </small>
-            </div>
-          </article>
-
           <article
             class="briefing-card relative min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-panel"
             aria-labelledby="briefing-title"
