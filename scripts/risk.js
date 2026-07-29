@@ -19,14 +19,15 @@ export const ENVIRONMENT_FORECAST_WEIGHTS = Object.freeze({
   dissolvedOxygen: 0.15,
 });
 
-export const DAILY_FORECAST_WEIGHTS = Object.freeze({
+export const UNIFIED_MODEL_WEIGHTS = Object.freeze({
   cellDensity: 0.45,
-  temperature: 0.25,
+  growthTrend: 0.15,
+  temperature: 0.15,
   chlorophyllA: 0.1,
   salinity: 0.05,
-  dissolvedOxygen: 0.05,
-  currentRetention: 0.05,
-  calmSea: 0.05,
+  dissolvedOxygen: 0.03,
+  currentRetention: 0.04,
+  calmSea: 0.03,
 });
 
 const clamp = (value, minimum = 0, maximum = 100) =>
@@ -221,6 +222,16 @@ export function calculateDailyForecastRisk(measurements, forecastDay) {
         ? getCellDensityScore(measurements.cellDensity)
         : 0,
     },
+    growthTrend: {
+      available:
+        isObserved('cellDensity') &&
+        Number.isFinite(measurements.recentCellGrowth),
+      score:
+        isObserved('cellDensity') &&
+        Number.isFinite(measurements.recentCellGrowth)
+          ? getGrowthTrendScore(measurements.recentCellGrowth)
+          : 0,
+    },
     temperature: {
       available: Number.isFinite(forecastDay.seaSurfaceTemperature),
       score: Number.isFinite(forecastDay.seaSurfaceTemperature)
@@ -258,13 +269,13 @@ export function calculateDailyForecastRisk(measurements, forecastDay) {
   const score = Math.round(
     Object.entries(factors).reduce(
       (total, [key, factor]) =>
-        total + factor.score * DAILY_FORECAST_WEIGHTS[key],
+        total + factor.score * UNIFIED_MODEL_WEIGHTS[key],
       0,
     ),
   );
   const availableWeight = Object.entries(factors).reduce(
     (total, [key, factor]) =>
-      total + (factor.available ? DAILY_FORECAST_WEIGHTS[key] : 0),
+      total + (factor.available ? UNIFIED_MODEL_WEIGHTS[key] : 0),
     0,
   );
 

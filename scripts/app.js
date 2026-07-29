@@ -2,15 +2,15 @@ import { marineAreas } from './data.js';
 import {
   compareOfficialThreshold,
   getRiskColor,
-} from './risk.js?v=20260729-marine-v2';
+} from './risk.js?v=20260729-unified-v3';
 import { initializeBusanMap } from './map.js';
 import { createDataBriefing } from './briefing.js';
 import {
   initializeMonthlyRiskCalendar,
 } from './calendar.js';
-import { loadPublicMarineData } from './publicData.js?v=20260729-marine-v2';
-import { createSevenDayForecast } from './forecast.js?v=20260729-marine-v2';
-import { fetchMarineForecast } from './marineForecast.js?v=20260729-marine-v2';
+import { loadPublicMarineData } from './publicData.js?v=20260729-unified-v3';
+import { createSevenDayForecast } from './forecast.js?v=20260729-unified-v3';
+import { fetchMarineForecast } from './marineForecast.js?v=20260729-unified-v3';
 
 const numberFormatter = new Intl.NumberFormat('ko-KR');
 let activeAreas = marineAreas;
@@ -388,8 +388,8 @@ function renderTopRiskArea() {
   document.querySelector('#top-risk-bar').style.backgroundColor = color;
   document.querySelector('#top-data-note').innerHTML = `
     <i data-lucide="info" class="mt-0.5 h-3.5 w-3.5 shrink-0"></i>
-    공식 응답이 없는 관측값은 표시하지 않습니다. 세포밀도가 없어 종합 위험지수는
-    산정하지 않지만, 수온 등을 조합한 주간 예측은 별도로 제공합니다.
+    공식 응답이 없는 관측값은 표시하지 않습니다. 상세 카드의 오늘 모델 위험도와
+    주간 막대는 세포밀도 중심의 동일한 계산식을 사용합니다.
   `;
 }
 
@@ -408,16 +408,20 @@ function formatReferenceTime(value) {
 function renderAreaDetail(area) {
   const riskColor = '#94a3b8';
   const riskGauge = document.querySelector('#selected-risk-gauge');
+  const riskGaugeLabel = document.querySelector(
+    '#selected-risk-gauge-label',
+  );
   const metrics = document.querySelector('#detail-metrics');
   const dataBadge = document.querySelector('#selected-data-badge');
   const organismSource = getFieldSource(area, 'organism');
 
   document.querySelector('#selected-area-name').textContent = area.name;
   document.querySelector('#selected-area-detail').textContent = area.detail;
-  document.querySelector('#selected-risk-score').textContent = '–';
+  document.querySelector('#selected-risk-score').textContent = '…';
   document.querySelector('#selected-risk-level').textContent =
-    '필수 공식자료 부족 · 산정 안 함';
+    '날짜별 해양예보 연결 중';
   document.querySelector('#selected-risk-level').style.color = riskColor;
+  riskGaugeLabel.textContent = '계산 중';
   document.querySelector('#selected-organism').textContent =
     organismSource.value === 'observed' ? area.organism : '자료 없음';
   document.querySelector('#selected-organism-source').textContent =
@@ -488,6 +492,43 @@ function renderAreaDetail(area) {
   if (window.lucide) {
     window.lucide.createIcons();
   }
+}
+
+/**
+ * 선택 해역 상세 카드와 주간 전망의 오늘 값을 하나의 점수로 맞춥니다.
+ */
+function renderSelectedModelRisk(day) {
+  const riskGauge = document.querySelector('#selected-risk-gauge');
+  const riskScore = document.querySelector('#selected-risk-score');
+  const riskLevel = document.querySelector('#selected-risk-level');
+  const riskGaugeLabel = document.querySelector(
+    '#selected-risk-gauge-label',
+  );
+
+  if (!riskGauge || !riskScore || !riskLevel || !riskGaugeLabel) return;
+
+  if (!day) {
+    riskScore.textContent = '–';
+    riskLevel.textContent = '예측자료 없음 · 산정 안 함';
+    riskLevel.style.color = '#94a3b8';
+    riskGaugeLabel.textContent = '자료 없음';
+    riskGauge.style.setProperty('--risk-color', '#94a3b8');
+    riskGauge.style.setProperty('--risk-angle', '0deg');
+    riskGauge.setAttribute('aria-label', '자체 모델 위험지수 자료 없음');
+    return;
+  }
+
+  const riskColor = getRiskColor(day.score);
+  riskScore.textContent = day.score;
+  riskLevel.textContent = `${day.level} · 주간 오늘값과 동일`;
+  riskLevel.style.color = riskColor;
+  riskGaugeLabel.textContent = '모델 위험';
+  riskGauge.style.setProperty('--risk-color', riskColor);
+  riskGauge.style.setProperty('--risk-angle', `${day.score * 3.6}deg`);
+  riskGauge.setAttribute(
+    'aria-label',
+    `자체 모델 위험지수 ${day.score}점 ${day.level}`,
+  );
 }
 
 function renderDataBriefing(area) {
@@ -570,6 +611,7 @@ async function renderSevenDayForecast(area) {
     if (sourceNote) {
       sourceNote.textContent = 'Open-Meteo Marine API 연결 실패';
     }
+    renderSelectedModelRisk(null);
     return;
   }
 
@@ -593,10 +635,12 @@ async function renderSevenDayForecast(area) {
     if (sourceNote) {
       sourceNote.textContent = '사용 가능한 날짜별 해수면수온 예보 없음';
     }
+    renderSelectedModelRisk(null);
     return;
   }
 
   const firstDay = forecast.days[0];
+  renderSelectedModelRisk(firstDay);
   summary.innerHTML = `
     <article class="forecast-summary-card">
       <span>오늘 모델 위험도</span>
