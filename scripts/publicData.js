@@ -5,7 +5,7 @@ const BUSAN_MARINE_URL =
   'https://apis.data.go.kr/6260000/BusanMrnEnvrnInfoService/getMrnEnvrnInfo';
 const REQUEST_TIMEOUT = 8000;
 const KOEM_REQUEST_TIMEOUT = 30000;
-const PUBLIC_CACHE_URL = './data/live-marine.json?v=20260729-map-risk-v4';
+const PUBLIC_CACHE_URL = './data/live-marine.json?v=20260729-top-risk-v5';
 const PUBLIC_CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
 const MEASUREMENT_FIELDS = [
   'cellDensity',

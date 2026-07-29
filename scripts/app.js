@@ -2,15 +2,15 @@ import { marineAreas } from './data.js';
 import {
   compareOfficialThreshold,
   getRiskColor,
-} from './risk.js?v=20260729-map-risk-v4';
-import { initializeBusanMap } from './map.js?v=20260729-map-risk-v4';
+} from './risk.js?v=20260729-top-risk-v5';
+import { initializeBusanMap } from './map.js?v=20260729-top-risk-v5';
 import { createDataBriefing } from './briefing.js';
 import {
   initializeMonthlyRiskCalendar,
 } from './calendar.js';
-import { loadPublicMarineData } from './publicData.js?v=20260729-map-risk-v4';
-import { createSevenDayForecast } from './forecast.js?v=20260729-map-risk-v4';
-import { fetchMarineForecast } from './marineForecast.js?v=20260729-map-risk-v4';
+import { loadPublicMarineData } from './publicData.js?v=20260729-top-risk-v5';
+import { createSevenDayForecast } from './forecast.js?v=20260729-top-risk-v5';
+import { fetchMarineForecast } from './marineForecast.js?v=20260729-top-risk-v5';
 
 const numberFormatter = new Intl.NumberFormat('ko-KR');
 let activeAreas = marineAreas;
@@ -365,31 +365,31 @@ function renderToday() {
   }).format(today);
 }
 
-function renderTopRiskArea() {
-  const topArea = [...activeAreas].sort(
-    (first, second) =>
-      getObservedFieldCount(second) - getObservedFieldCount(first),
-  )[0];
-  const observedFieldCount = getObservedFieldCount(topArea);
-  const color = observedFieldCount > 0 ? '#14b8a6' : '#94a3b8';
+function renderTopRiskArea(topRisk) {
+  const isLoading = topRisk === undefined;
+  const color = topRisk ? getRiskColor(topRisk.today.score) : '#94a3b8';
+  const topAreaName = document.querySelector('#top-area-name');
+  const topAreaSubtitle = document.querySelector('#top-area-subtitle');
+  const topRiskScore = document.querySelector('#top-risk-score');
+  const topRiskLevel = document.querySelector('#top-risk-level');
+  const topRiskBar = document.querySelector('#top-risk-bar');
 
-  document.querySelector('#top-area-name').textContent = topArea.name;
-  document.querySelector('#top-area-subtitle').textContent =
-    observedFieldCount > 0
-      ? `공식 관측항목 ${observedFieldCount}개 연결`
-      : '연결된 공식 관측값이 없습니다.';
-  document.querySelector('#top-risk-score').textContent = observedFieldCount;
-  document.querySelector('#top-risk-score').style.color = color;
-  document.querySelector('#top-risk-level').textContent =
-    observedFieldCount > 0 ? '공식 관측' : '자료 없음';
-  document.querySelector('#top-risk-level').style.color = color;
-  document.querySelector('#top-risk-bar').style.width =
-    `${(observedFieldCount / detailMetricDefinitions.length) * 100}%`;
-  document.querySelector('#top-risk-bar').style.backgroundColor = color;
+  topAreaName.textContent = topRisk?.area.name ?? (isLoading ? '계산 중' : '자료 없음');
+  topAreaSubtitle.textContent = topRisk
+    ? '최신 공개 데이터·해양예보 기준'
+    : isLoading
+      ? '6개 해역의 오늘 위험지수를 계산하고 있습니다.'
+      : '계산 가능한 최신 해양예보가 없습니다.';
+  topRiskScore.textContent = topRisk?.today.score ?? (isLoading ? '…' : '–');
+  topRiskScore.style.color = color;
+  topRiskLevel.textContent = topRisk?.today.level ?? (isLoading ? '계산 중' : '자료 없음');
+  topRiskLevel.style.color = color;
+  topRiskBar.style.width = `${topRisk?.today.score ?? 0}%`;
+  topRiskBar.style.backgroundColor = color;
   document.querySelector('#top-data-note').innerHTML = `
     <i data-lucide="info" class="mt-0.5 h-3.5 w-3.5 shrink-0"></i>
-    공식 응답이 없는 관측값은 표시하지 않습니다. 상세 카드의 오늘 모델 위험도와
-    주간 막대는 세포밀도 중심의 동일한 계산식을 사용합니다.
+    지도 마커·상세 카드·주간 오늘값과 같은 0~100 계산 결과입니다.
+    공식 적조특보와는 별개의 연구·교육용 모델 위험지수입니다.
   `;
 }
 
@@ -721,7 +721,7 @@ async function renderSevenDayForecast(area) {
  * 6개 해역의 오늘 위험점수를 지도에 각각 표시합니다.
  */
 async function renderMapRiskScores() {
-  await Promise.allSettled(
+  const riskResults = await Promise.all(
     activeAreas.map(async (area) => {
       try {
         const marineForecast = await fetchMarineForecast(area);
@@ -738,15 +738,28 @@ async function renderMapRiskScores() {
               }
             : null,
         );
+        return today ? { area, today } : null;
       } catch (error) {
         console.warn(
           `${area.name} 지도 위험점수를 계산하지 못했습니다.`,
           error,
         );
         mapController?.updateRiskScore(area.id, null);
+        return null;
       }
     }),
   );
+
+  const topRisk = riskResults
+    .filter(Boolean)
+    .reduce(
+      (highest, current) =>
+        !highest || current.today.score > highest.today.score
+          ? current
+          : highest,
+      null,
+    );
+  renderTopRiskArea(topRisk);
 }
 
 function updateAreaCardSelection() {
