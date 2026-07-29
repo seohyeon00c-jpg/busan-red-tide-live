@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-29T03:16:27.362Z",
+  "generatedAt": "2026-07-29T03:18:45.168Z",
   "collector": "github-actions",
-  "mode": "demo",
+  "mode": "hybrid",
   "areas": [
     {
       "id": "gijang",
@@ -12,36 +12,36 @@
       "longitude": 129.246,
       "cellDensity": 128,
       "organism": "코클로디니움",
-      "waterTemperature": 25.8,
+      "waterTemperature": 16.838,
       "chlorophyllA": 6.8,
-      "salinity": 32.1,
-      "dissolvedOxygen": 6.3,
-      "ph": 8.08,
+      "salinity": 33.148,
+      "dissolvedOxygen": 2.559,
+      "ph": 7.91,
       "recentCellGrowth": 35,
-      "riskScore": 70,
-      "riskLevel": "경계",
+      "riskScore": 58,
+      "riskLevel": "주의",
       "riskBreakdown": {
         "cellDensity": 70.34281226642935,
-        "temperature": 100,
+        "temperature": 0,
         "chlorophyllA": 56.666666666666664,
         "salinity": 100,
-        "dissolvedOxygen": 34,
+        "dissolvedOxygen": 100,
         "growthTrend": 43.75
       },
       "referenceTime": "2026-07-28T14:00:00+09:00",
       "dataStatus": {
-        "measurements": "demo",
-        "riskIndex": "derived-demo",
+        "measurements": "hybrid",
+        "riskIndex": "derived-hybrid",
         "officialAlert": "not-connected",
         "forecast": "demo-forecast",
         "fields": {
           "cellDensity": "demo",
           "organism": "demo",
-          "waterTemperature": "demo",
+          "waterTemperature": "observed",
           "chlorophyllA": "demo",
-          "salinity": "demo",
-          "dissolvedOxygen": "demo",
-          "ph": "demo"
+          "salinity": "observed",
+          "dissolvedOxygen": "observed",
+          "ph": "observed"
         }
       }
     },
@@ -135,36 +135,36 @@
       "longitude": 129.0874,
       "cellDensity": 19,
       "organism": "코클로디니움",
-      "waterTemperature": 25.3,
+      "waterTemperature": 29.603,
       "chlorophyllA": 4.2,
-      "salinity": 32.4,
-      "dissolvedOxygen": 7.2,
-      "ph": 8.14,
+      "salinity": 28.961,
+      "dissolvedOxygen": 2.433,
+      "ph": 8.29,
       "recentCellGrowth": 9,
-      "riskScore": 49,
+      "riskScore": 44,
       "riskLevel": "주의",
       "riskBreakdown": {
         "cellDensity": 43.36139245415396,
-        "temperature": 100,
+        "temperature": 34.92499999999996,
         "chlorophyllA": 35,
         "salinity": 100,
-        "dissolvedOxygen": 15.999999999999998,
+        "dissolvedOxygen": 100,
         "growthTrend": 11.25
       },
       "referenceTime": "2026-07-28T14:00:00+09:00",
       "dataStatus": {
-        "measurements": "demo",
-        "riskIndex": "derived-demo",
+        "measurements": "hybrid",
+        "riskIndex": "derived-hybrid",
         "officialAlert": "not-connected",
         "forecast": "demo-forecast",
         "fields": {
           "cellDensity": "demo",
           "organism": "demo",
-          "waterTemperature": "demo",
+          "waterTemperature": "observed",
           "chlorophyllA": "demo",
-          "salinity": "demo",
-          "dissolvedOxygen": "demo",
-          "ph": "demo"
+          "salinity": "observed",
+          "dissolvedOxygen": "observed",
+          "ph": "observed"
         }
       }
     },
@@ -176,36 +176,36 @@
       "longitude": 128.9631,
       "cellDensity": 8,
       "organism": "규조류 우점",
-      "waterTemperature": 24.9,
+      "waterTemperature": 24.116,
       "chlorophyllA": 3.3,
-      "salinity": 30.8,
-      "dissolvedOxygen": 7.5,
-      "ph": 8.16,
+      "salinity": 31.456,
+      "dissolvedOxygen": 11.647,
+      "ph": 8.34,
       "recentCellGrowth": 4,
-      "riskScore": 42,
+      "riskScore": 41,
       "riskLevel": "주의",
       "riskBreakdown": {
         "cellDensity": 31.803481922888615,
         "temperature": 100,
         "chlorophyllA": 27.499999999999996,
         "salinity": 100,
-        "dissolvedOxygen": 10,
+        "dissolvedOxygen": 0,
         "growthTrend": 5
       },
       "referenceTime": "2026-07-28T14:00:00+09:00",
       "dataStatus": {
-        "measurements": "demo",
-        "riskIndex": "derived-demo",
+        "measurements": "hybrid",
+        "riskIndex": "derived-hybrid",
         "officialAlert": "not-connected",
         "forecast": "demo-forecast",
         "fields": {
           "cellDensity": "demo",
           "organism": "demo",
-          "waterTemperature": "demo",
+          "waterTemperature": "observed",
           "chlorophyllA": "demo",
-          "salinity": "demo",
-          "dissolvedOxygen": "demo",
-          "ph": "demo"
+          "salinity": "observed",
+          "dissolvedOxygen": "observed",
+          "ph": "observed"
         }
       }
     },
@@ -217,36 +217,36 @@
       "longitude": 128.8315,
       "cellDensity": 3,
       "organism": "미동정 혼합종",
-      "waterTemperature": 24.4,
+      "waterTemperature": 27.755,
       "chlorophyllA": 2.6,
-      "salinity": 31.2,
-      "dissolvedOxygen": 7.8,
-      "ph": 8.18,
+      "salinity": 31.248,
+      "dissolvedOxygen": 6.998,
+      "ph": 8.22,
       "recentCellGrowth": -3,
-      "riskScore": 35,
+      "riskScore": 33,
       "riskLevel": "관심",
       "riskBreakdown": {
         "cellDensity": 20.065763012322414,
-        "temperature": 100,
+        "temperature": 81.12500000000003,
         "chlorophyllA": 21.666666666666668,
         "salinity": 100,
-        "dissolvedOxygen": 4.0000000000000036,
+        "dissolvedOxygen": 20.039999999999996,
         "growthTrend": 0
       },
       "referenceTime": "2026-07-28T14:00:00+09:00",
       "dataStatus": {
-        "measurements": "demo",
-        "riskIndex": "derived-demo",
+        "measurements": "hybrid",
+        "riskIndex": "derived-hybrid",
         "officialAlert": "not-connected",
         "forecast": "demo-forecast",
         "fields": {
           "cellDensity": "demo",
           "organism": "demo",
-          "waterTemperature": "demo",
+          "waterTemperature": "observed",
           "chlorophyllA": "demo",
-          "salinity": "demo",
-          "dissolvedOxygen": "demo",
-          "ph": "demo"
+          "salinity": "observed",
+          "dissolvedOxygen": "observed",
+          "ph": "observed"
         }
       }
     }
@@ -271,7 +271,7 @@
       "agency": "해양환경공단",
       "dataset": "해양환경측정망",
       "status": "connected",
-      "message": "API 연결 · 부산 정점 확인 · 필드 wtrtmpSfclyr, wtrtmpBtmlyr, salntSfclyr, salntBtmlyr, phDnstySfclyr, phDnstyBtmlyr, doxySfclyr, doxyBtmlyr"
+      "message": "API 연결 · 부산 정점 11곳 환경값 반영"
     },
     {
       "id": "map",
@@ -282,7 +282,7 @@
     }
   ],
   "warnings": [
-    "공공 관측값이 반영되지 않아 모든 해양 수치는 예시 데이터입니다."
+    "일부 공식 관측값만 반영됐으며 나머지 환경지표와 7일 전망은 시연·실험 데이터입니다."
   ],
   "officialObservations": []
 }
