@@ -532,25 +532,31 @@ body {
   border-color: #f1f5f9;
 }
 
-.calendar-cell.low {
-  color: #9f3a42;
-  background: #fff1f2;
-  border-color: #ffe4e6;
+.calendar-cell.risk-safe {
+  color: #0f766e;
+  background: #f0fdfa;
+  border-color: #99f6e4;
 }
 
-.calendar-cell.medium {
-  color: #a61b2b;
-  background: #fecdd3;
-  border-color: #fda4af;
+.calendar-cell.risk-interest {
+  color: #92400e;
+  background: #fffbeb;
+  border-color: #fde68a;
 }
 
-.calendar-cell.high {
-  color: #fff;
-  background: #dc4b56;
-  border-color: #c93743;
+.calendar-cell.risk-caution {
+  color: #9a3412;
+  background: #fff7ed;
+  border-color: #fdba74;
 }
 
-.calendar-cell.very-high {
+.calendar-cell.risk-warning {
+  color: #991b1b;
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.calendar-cell.risk-critical {
   color: #fff;
   background: #7f1d1d;
   border-color: #681616;
@@ -592,6 +598,22 @@ body {
   opacity: 0.75;
 }
 
+.calendar-risk-area,
+.calendar-risk-phase {
+  margin-top: 3px;
+  overflow: hidden;
+  font-size: 6px;
+  font-weight: 700;
+  opacity: 0.78;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-risk-phase {
+  margin-top: 1px;
+  opacity: 0.6;
+}
+
 .calendar-no-record {
   margin: auto 0;
   color: #a0aec0;
@@ -607,8 +629,7 @@ body {
   font-weight: 800;
 }
 
-.calendar-cell.high .calendar-today-label,
-.calendar-cell.very-high .calendar-today-label {
+.calendar-cell.risk-critical .calendar-today-label {
   color: #ccfbf1;
 }
 
@@ -647,24 +668,24 @@ body {
   background: #f8fafc;
 }
 
-.calendar-swatch.low {
-  background: #fff1f2;
+.calendar-swatch.risk-safe {
+  background: #ccfbf1;
 }
 
-.calendar-swatch.medium {
-  background: #fecdd3;
+.calendar-swatch.risk-interest {
+  background: #fef3c7;
 }
 
-.calendar-swatch.high {
-  background: #dc4b56;
+.calendar-swatch.risk-caution {
+  background: #fed7aa;
 }
 
-.calendar-swatch.very-high {
+.calendar-swatch.risk-warning {
+  background: #fca5a5;
+}
+
+.calendar-swatch.risk-critical {
   background: #7f1d1d;
-}
-
-.calendar-swatch.official {
-  background: #99f6e4;
 }
 
 /* 공공데이터 연결 상태와 필드별 출처를 같은 색 체계로 표시합니다. */
@@ -957,6 +978,8 @@ button:focus-visible {
   }
 
   .calendar-no-record,
+  .calendar-risk-area,
+  .calendar-risk-phase,
   .calendar-today-label,
   .official-calendar-mark small {
     display: none;

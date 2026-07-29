@@ -2,15 +2,15 @@ import { marineAreas } from './data.js';
 import {
   compareOfficialThreshold,
   getRiskColor,
-} from './risk.js?v=20260729-top-risk-v5';
-import { initializeBusanMap } from './map.js?v=20260729-top-risk-v5';
+} from './risk.js?v=20260729-monthly-risk-v6';
+import { initializeBusanMap } from './map.js?v=20260729-monthly-risk-v6';
 import { createDataBriefing } from './briefing.js';
 import {
   initializeMonthlyRiskCalendar,
-} from './calendar.js';
-import { loadPublicMarineData } from './publicData.js?v=20260729-top-risk-v5';
-import { createSevenDayForecast } from './forecast.js?v=20260729-top-risk-v5';
-import { fetchMarineForecast } from './marineForecast.js?v=20260729-top-risk-v5';
+} from './calendar.js?v=20260729-monthly-risk-v6';
+import { loadPublicMarineData } from './publicData.js?v=20260729-monthly-risk-v6';
+import { createSevenDayForecast } from './forecast.js?v=20260729-monthly-risk-v6';
+import { fetchMarineForecast } from './marineForecast.js?v=20260729-monthly-risk-v6';
 
 const numberFormatter = new Intl.NumberFormat('ko-KR');
 let activeAreas = marineAreas;
@@ -933,8 +933,8 @@ async function initializeApp() {
   mapController = initializeBusanMap(activeAreas, selectArea);
   void renderMapRiskScores();
   selectArea(selectedAreaId);
-  initializeMonthlyRiskCalendar({
-    officialObservations: dashboardState.officialObservations,
+  void initializeMonthlyRiskCalendar({
+    areas: activeAreas,
   });
 
   // 동적으로 추가된 아이콘까지 한 번에 활성화합니다.
