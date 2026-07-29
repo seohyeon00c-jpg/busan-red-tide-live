@@ -563,8 +563,12 @@ function mergeKoem(records, areas) {
       ),
     };
 
+    let recordMatchedFields = 0;
     Object.entries(fields).forEach(([field, value]) => {
-      if (updateNumberField(area, field, value)) matchedFields += 1;
+      if (updateNumberField(area, field, value)) {
+        matchedFields += 1;
+        recordMatchedFields += 1;
+      }
     });
 
     const observedAt = asText(
@@ -575,7 +579,11 @@ function mergeKoem(records, areas) {
         'investigationDate',
       ]),
     );
-    if (observedAt) area.referenceTime = observedAt;
+    if (observedAt) {
+      area.referenceTime = observedAt;
+    } else if (recordMatchedFields > 0) {
+      area.referenceTime = 'KOEM 관측시각 미제공';
+    }
   });
 
   return {
