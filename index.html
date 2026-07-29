@@ -41,7 +41,7 @@
 
     <!-- 무료 Lucide 아이콘 CDN을 사용합니다. -->
     <script src="https://unpkg.com/lucide@0.468.0"></script>
-    <link rel="stylesheet" href="./styles.css?v=20260729-map-risk-v4" />
+    <link rel="stylesheet" href="./styles.css?v=20260729-top-risk-v5" />
   </head>
   <body class="min-h-screen bg-slate-100 text-slate-900 antialiased">
     <a href="#main-content" class="skip-link">본문으로 바로가기</a>
@@ -191,11 +191,11 @@
 
           <aside
             class="rounded-2xl border border-white/10 bg-white/[0.055] p-5 shadow-2xl shadow-black/20 sm:p-6"
-            aria-label="공식 관측항목이 가장 많은 해역"
+            aria-label="오늘 모델 위험지수가 가장 높은 해역"
           >
             <div class="flex items-center justify-between text-xs text-slate-400">
-              <span>공식 관측항목이 가장 많은 해역</span>
-              <i data-lucide="database" class="h-5 w-5 text-teal-300"></i>
+              <span>오늘 모델 위험지수가 가장 높은 해역</span>
+              <i data-lucide="gauge" class="h-5 w-5 text-teal-300"></i>
             </div>
             <div class="mt-5 flex items-end justify-between gap-4">
               <div>
@@ -211,7 +211,7 @@
                 >
                   -
                 </strong>
-                <span class="text-xs text-slate-500">개 항목</span>
+                <span class="text-xs text-slate-500">점</span>
               </div>
             </div>
             <div class="mt-5 h-1.5 overflow-hidden rounded-full bg-slate-700">
@@ -223,7 +223,7 @@
             </div>
             <div class="mt-4 flex items-center justify-between text-xs">
               <span class="text-slate-400">
-                데이터 상태
+                위험 단계
                 <strong id="top-risk-level" class="ml-1 text-white">-</strong>
               </span>
               <span class="text-slate-400">
@@ -798,6 +798,6 @@
     </footer>
 
     <script src="./scripts/config.js"></script>
-    <script type="module" src="./scripts/app.js?v=20260729-map-risk-v4"></script>
+    <script type="module" src="./scripts/app.js?v=20260729-top-risk-v5"></script>
   </body>
 </html>
