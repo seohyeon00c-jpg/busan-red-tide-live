@@ -2,15 +2,16 @@ import { marineAreas } from './data.js';
 import {
   compareOfficialThreshold,
   getRiskColor,
-} from './risk.js?v=20260729-monthly-risk-v6';
-import { initializeBusanMap } from './map.js?v=20260729-monthly-risk-v6';
+} from './risk.js?v=20260729-area-calendar-v7';
+import { initializeBusanMap } from './map.js?v=20260729-area-calendar-v7';
 import { createDataBriefing } from './briefing.js';
 import {
   initializeMonthlyRiskCalendar,
-} from './calendar.js?v=20260729-monthly-risk-v6';
-import { loadPublicMarineData } from './publicData.js?v=20260729-monthly-risk-v6';
-import { createSevenDayForecast } from './forecast.js?v=20260729-monthly-risk-v6';
-import { fetchMarineForecast } from './marineForecast.js?v=20260729-monthly-risk-v6';
+  selectMonthlyRiskCalendarArea,
+} from './calendar.js?v=20260729-area-calendar-v7';
+import { loadPublicMarineData } from './publicData.js?v=20260729-area-calendar-v7';
+import { createSevenDayForecast } from './forecast.js?v=20260729-area-calendar-v7';
+import { fetchMarineForecast } from './marineForecast.js?v=20260729-area-calendar-v7';
 
 const numberFormatter = new Intl.NumberFormat('ko-KR');
 let activeAreas = marineAreas;
@@ -430,13 +431,6 @@ function renderAreaDetail(area) {
     organismSource.value;
   document.querySelector('#selected-reference-time').textContent =
     `${formatReferenceTime(area.referenceTime)} 기준`;
-  const densityObserved =
-    area.dataStatus?.fields?.cellDensity === 'observed' &&
-    Number.isFinite(area.cellDensity);
-  document.querySelector('#selected-official-comparison').textContent =
-    densityObserved
-      ? `공식 세포밀도 기준 비교 · ${compareOfficialThreshold(area.cellDensity)}`
-      : '공식 세포밀도 자료 없음 · 기준 비교 불가';
 
   riskGauge.style.setProperty('--risk-color', riskColor);
   riskGauge.style.setProperty('--risk-angle', '0deg');
@@ -779,6 +773,7 @@ function selectArea(areaId, options = {}) {
   renderAreaDetail(area);
   renderDataBriefing(area);
   renderSevenDayForecast(area);
+  selectMonthlyRiskCalendarArea(areaId);
   updateAreaCardSelection();
   mapController?.selectArea(areaId, {
     moveMap: Boolean(options.moveMap),
@@ -935,6 +930,8 @@ async function initializeApp() {
   selectArea(selectedAreaId);
   void initializeMonthlyRiskCalendar({
     areas: activeAreas,
+    selectedAreaId,
+    onAreaSelect: selectArea,
   });
 
   // 동적으로 추가된 아이콘까지 한 번에 활성화합니다.
