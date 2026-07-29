@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="부산 주요 연안의 적조 발생·확산 위험을 공공 해양환경 데이터로 살펴보는 연구·교육용 프로토타입"
+    />
+    <meta name="theme-color" content="#071827" />
+    <title>Busan Red Tide Live</title>
+
+    <!-- 무료 Tailwind CSS CDN을 사용합니다. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              ocean: {
+                950: '#061522',
+                900: '#091d2e',
+                800: '#0e293d',
+                700: '#16445d',
+              },
+              tide: {
+                50: '#effcf9',
+                100: '#d6f7f0',
+                500: '#14b8a6',
+                600: '#0d9488',
+                700: '#0f766e',
+              },
+            },
+            boxShadow: {
+              panel: '0 16px 40px rgba(15, 38, 58, 0.08)',
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- 무료 Lucide 아이콘 CDN을 사용합니다. -->
+    <script src="https://unpkg.com/lucide@0.468.0"></script>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="min-h-screen bg-slate-100 text-slate-900 antialiased">
+    <a href="#main-content" class="skip-link">본문으로 바로가기</a>
+
+    <!-- 상단 서비스 헤더 -->
+    <header
+      class="sticky top-0 z-50 border-b border-white/10 bg-ocean-950/95 text-white backdrop-blur"
+    >
+      <div
+        class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-[72px] lg:px-8"
+      >
+        <a href="#overview" class="flex items-center gap-3" aria-label="서비스 홈">
+          <span
+            class="grid h-10 w-10 place-items-center rounded-xl border border-teal-300/20 bg-tide-600 shadow-lg shadow-teal-950/30"
+          >
+            <i data-lucide="waves" class="h-6 w-6"></i>
+          </span>
+          <span class="brand-copy">
+            <strong class="block text-sm font-extrabold tracking-[0.12em]">
+              BUSAN RED TIDE
+            </strong>
+            <small class="block text-[8px] tracking-[0.2em] text-slate-400">
+              LIVE MONITORING SYSTEM
+            </small>
+          </span>
+        </a>
+
+        <nav class="hidden items-center gap-1 lg:flex" aria-label="주요 메뉴">
+          <a
+            href="#overview"
+            class="rounded-lg px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/5 hover:text-white"
+          >
+            서비스 소개
+          </a>
+          <a
+            href="#monitoring"
+            class="rounded-lg px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/5 hover:text-white"
+          >
+            해역 지도
+          </a>
+          <a
+            href="#analysis"
+            class="rounded-lg px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/5 hover:text-white"
+          >
+            데이터 브리핑
+          </a>
+          <a
+            href="#forecast"
+            class="rounded-lg px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/5 hover:text-white"
+          >
+            7일 예측
+          </a>
+          <a
+            href="#calendar"
+            class="rounded-lg px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/5 hover:text-white"
+          >
+            위험 달력
+          </a>
+          <a
+            href="#sources"
+            class="rounded-lg px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/5 hover:text-white"
+          >
+            데이터 출처
+          </a>
+        </nav>
+
+        <div class="flex items-center gap-3">
+          <span
+            id="header-system-status"
+            class="hidden items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1.5 text-xs font-bold text-amber-300 sm:inline-flex"
+          >
+            <span class="h-1.5 w-1.5 rounded-full bg-amber-300"></span>
+            <b id="header-system-status-text">데이터 확인 중</b>
+          </span>
+          <span
+            id="today-label"
+            class="header-date text-[10px] font-medium text-slate-400 sm:text-xs"
+          ></span>
+          <button
+            id="mobile-menu-button"
+            type="button"
+            class="mobile-menu-button grid h-11 w-11 place-items-center rounded-lg border border-white/10 bg-white/5 text-slate-200 lg:hidden"
+            aria-label="모바일 메뉴 열기"
+            aria-expanded="false"
+            aria-controls="mobile-navigation"
+          >
+            <i data-lucide="menu" class="h-5 w-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <nav
+        id="mobile-navigation"
+        class="mobile-navigation"
+        data-open="false"
+        aria-label="모바일 주요 메뉴"
+        aria-hidden="true"
+      >
+        <a href="#overview">서비스 소개</a>
+        <a href="#monitoring">해역 지도</a>
+        <a href="#analysis">데이터 브리핑</a>
+        <a href="#forecast">7일 예측</a>
+        <a href="#calendar">위험 달력</a>
+        <a href="#sources">데이터 출처</a>
+      </nav>
+    </header>
+
+    <main id="main-content">
+      <!-- 1단계 핵심 소개 -->
+      <section id="overview" class="hero-grid relative overflow-hidden bg-ocean-950">
+        <div
+          class="relative z-10 mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 sm:py-16 lg:grid-cols-[1.35fr_0.65fr] lg:items-center lg:px-8 lg:py-20"
+        >
+          <div>
+            <div
+              class="inline-flex items-center gap-2 rounded-md border border-teal-300/20 bg-teal-400/10 px-3 py-1.5 text-xs font-bold text-teal-200"
+            >
+              <i data-lucide="database" class="h-4 w-4"></i>
+              7단계 · 검증·문서화
+            </div>
+            <h1
+              class="mt-5 max-w-3xl text-3xl font-extrabold leading-tight tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl"
+            >
+              부산 바다의 적조 위험을
+              <span class="mt-1 block text-teal-300">투명한 데이터로 구분합니다.</span>
+            </h1>
+            <p
+              class="mt-5 max-w-2xl break-keep text-sm leading-7 text-slate-300 sm:text-base"
+            >
+              실제 관측값, 계산으로 만든 자체 위험지수, 미래 예측값을 서로
+              혼동하지 않도록 먼저 데이터 구조와 표시 원칙을 정의했습니다.
+            </p>
+            <div class="mt-7 flex flex-wrap items-center gap-3">
+              <span
+                class="rounded-lg bg-tide-600 px-4 py-2.5 text-sm font-bold text-white"
+              >
+                부산 주요 6개 해역
+              </span>
+              <span class="text-xs text-slate-400">
+                기준 자료:
+                <strong id="hero-reference-label" class="font-semibold text-slate-200">
+                  2026.07.28 초기 시연 스냅샷
+                </strong>
+              </span>
+            </div>
+          </div>
+
+          <aside
+            class="rounded-2xl border border-white/10 bg-white/[0.055] p-5 shadow-2xl shadow-black/20 sm:p-6"
+            aria-label="현재 최고 위험 해역"
+          >
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>시연 데이터 최고 위험 해역</span>
+              <i data-lucide="shield-alert" class="h-5 w-5 text-rose-400"></i>
+            </div>
+            <div class="mt-5 flex items-end justify-between gap-4">
+              <div>
+                <strong id="top-area-name" class="block text-3xl text-white">-</strong>
+                <span id="top-area-subtitle" class="mt-1 block text-xs text-slate-400">
+                  데이터를 계산하고 있습니다.
+                </span>
+              </div>
+              <div class="text-right">
+                <strong
+                  id="top-risk-score"
+                  class="font-mono text-5xl font-bold text-rose-400"
+                >
+                  -
+                </strong>
+                <span class="text-xs text-slate-500">/100</span>
+              </div>
+            </div>
+            <div class="mt-5 h-1.5 overflow-hidden rounded-full bg-slate-700">
+              <div
+                id="top-risk-bar"
+                class="h-full rounded-full bg-rose-500 transition-all"
+                style="width: 0%"
+              ></div>
+            </div>
+            <div class="mt-4 flex items-center justify-between text-xs">
+              <span class="text-slate-400">
+                자체 위험단계
+                <strong id="top-risk-level" class="ml-1 text-white">-</strong>
+              </span>
+              <span class="text-slate-400">
+                공식특보
+                <strong class="ml-1 text-slate-200">연결 안 됨</strong>
+              </span>
+            </div>
+            <p id="top-data-note" class="mt-5 flex gap-2 border-t border-white/10 pt-4 text-[10px] leading-5 text-slate-500">
+              <i data-lucide="info" class="mt-0.5 h-3.5 w-3.5 shrink-0"></i>
+              이 값은 예시 해양환경 자료로 계산한 시연용 파생지수입니다.
+              실제 관측이나 공식 특보가 아닙니다.
+            </p>
+          </aside>
+        </div>
+      </section>
+
+      <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <!-- 시연 데이터 안내 -->
+        <section
+          id="system-mode-banner"
+          class="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 sm:flex-row sm:items-center sm:justify-between"
+          data-mode="loading"
+          aria-live="polite"
+          aria-label="데이터 상태 안내"
+        >
+          <div class="flex items-start gap-3">
+            <i data-lucide="triangle-alert" class="mt-0.5 h-5 w-5 shrink-0 text-amber-600"></i>
+            <p class="text-xs leading-5 sm:text-sm">
+              <strong id="system-mode-title" class="font-extrabold">공공데이터 연결 상태를 확인하고 있습니다.</strong>
+              <span id="system-mode-message">연결 전에는 안전한 시연 데이터가 사용됩니다.</span>
+            </p>
+          </div>
+          <span
+            class="w-fit shrink-0 rounded bg-amber-200/70 px-2 py-1 text-[10px] font-extrabold tracking-wider"
+          >
+            <span id="system-mode-label">CHECKING</span>
+          </span>
+        </section>
+
+        <!-- 핵심 데이터 통계 -->
+        <section
+          id="summary-grid"
+          class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          aria-label="핵심 데이터 통계"
+        ></section>
+
+        <!-- 실제 부산 지도와 선택 해역 상세정보 -->
+        <section id="monitoring" class="mt-6 scroll-mt-24">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p class="text-[10px] font-extrabold tracking-[0.12em] text-tide-600">
+                COASTAL MONITORING
+              </p>
+              <h2 class="mt-1 text-xl font-extrabold tracking-tight text-ocean-900">
+                부산 연안 적조 위험 지도
+              </h2>
+              <p class="mt-2 text-xs leading-5 text-slate-500">
+                마커를 선택하면 해당 해역의 상세정보가 함께 바뀝니다.
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 text-[10px]">
+              <span
+                class="inline-flex items-center gap-1.5 rounded bg-emerald-50 px-2 py-1.5 font-bold text-emerald-700"
+              >
+                <i data-lucide="map" class="h-3.5 w-3.5"></i>
+                <span id="map-provider-label">부산 행정구역 이미지</span>
+              </span>
+              <span class="rounded bg-amber-50 px-2 py-1.5 font-bold text-amber-700">
+                마커 위험도 · 시연 계산값
+              </span>
+            </div>
+          </div>
+
+          <div class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(370px,0.55fr)]">
+            <article
+              class="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-3 shadow-panel sm:p-4"
+              aria-labelledby="map-card-title"
+            >
+              <div class="mb-3 flex items-center justify-between gap-4">
+                <div>
+                  <h3 id="map-card-title" class="text-sm font-extrabold text-ocean-900">
+                    부산 연안 간편 지도
+                  </h3>
+                  <p class="mt-1 text-[9px] text-slate-500">
+                    기장부터 가덕도까지 6개 연안 해역
+                  </p>
+                </div>
+                <span class="inline-flex items-center gap-1 text-[9px] text-slate-400">
+                  <i data-lucide="mouse-pointer-click" class="h-3.5 w-3.5"></i>
+                  마커 선택
+                </span>
+              </div>
+
+              <div class="map-shell relative overflow-hidden rounded-lg border border-slate-200">
+                <div
+                  id="busan-map"
+                  class="h-full w-full"
+                  role="group"
+                  aria-label="부산 6개 해역 적조 위험 지도"
+                ></div>
+                <div
+                  id="map-error"
+                  class="absolute inset-0 z-[500] hidden place-items-center bg-slate-100 p-6 text-center"
+                >
+                  <div>
+                    <i data-lucide="image-off" class="mx-auto h-8 w-8 text-slate-400"></i>
+                    <strong class="mt-3 block text-sm text-slate-700">
+                      지도를 불러오지 못했습니다.
+                    </strong>
+                    <p class="mt-2 text-xs leading-5 text-slate-500">
+                      지도 이미지 파일을 확인해 주세요. 해역 상세정보는 계속 볼 수 있습니다.
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  class="map-legend absolute bottom-3 right-3 z-20 flex flex-wrap gap-2 rounded-md border border-slate-200 bg-white/95 px-3 py-2 text-[8px] font-semibold text-slate-600 shadow-lg backdrop-blur"
+                  aria-label="마커 위험도 범례"
+                >
+                  <span><i class="bg-teal-500"></i>안전</span>
+                  <span><i class="bg-amber-500"></i>관심</span>
+                  <span><i class="bg-orange-500"></i>주의</span>
+                  <span><i class="bg-red-600"></i>경계</span>
+                  <span><i class="bg-red-900"></i>심각</span>
+                </div>
+              </div>
+              <p class="mt-3 flex items-start gap-2 text-[9px] leading-4 text-slate-400">
+                <i data-lucide="info" class="mt-0.5 h-3.5 w-3.5 shrink-0"></i>
+                제공된 부산 행정구역 이미지를 배경으로 사용하며, 마커 위치는 해역의
+                대략적인 연안 위치를 나타냅니다.
+              </p>
+            </article>
+
+            <article
+              id="area-detail-card"
+              class="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-panel"
+              aria-live="polite"
+              aria-labelledby="selected-area-name"
+            >
+              <div class="detail-header relative overflow-hidden bg-ocean-900 p-5 text-white">
+                <div class="relative z-10 flex items-center justify-between gap-5">
+                  <div>
+                    <p class="text-[9px] font-extrabold tracking-[0.12em] text-teal-300">
+                      SELECTED MARINE AREA
+                    </p>
+                    <h3 id="selected-area-name" class="mt-1 text-3xl font-extrabold">
+                      기장
+                    </h3>
+                    <p id="selected-area-detail" class="mt-1 text-[10px] text-slate-400">
+                      대변항 동방 연안
+                    </p>
+                  </div>
+                  <div
+                    id="selected-risk-gauge"
+                    class="risk-gauge"
+                    aria-label="자체 위험지수"
+                  >
+                    <strong id="selected-risk-score">-</strong>
+                    <span>/ 100</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="border-b border-slate-100 bg-slate-50 px-4 py-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span
+                    id="selected-data-badge"
+                    class="rounded border border-amber-200 bg-amber-50 px-2 py-1 text-[9px] font-bold text-amber-700"
+                  >
+                    시연모드 · 예시 데이터
+                  </span>
+                  <span id="selected-reference-time" class="text-[9px] text-slate-500"></span>
+                </div>
+              </div>
+
+              <div class="p-4">
+                <div class="flex items-center justify-between rounded-lg border-l-4 border-tide-600 bg-slate-50 px-3 py-2.5">
+                  <span class="text-[9px] font-semibold text-slate-500">적조 원인생물</span>
+                  <span class="flex items-center gap-2">
+                    <small id="selected-organism-source" class="metric-source" data-source="demo">예시</small>
+                    <strong id="selected-organism" class="text-xs text-ocean-900">-</strong>
+                  </span>
+                </div>
+
+                <div
+                  id="detail-metrics"
+                  class="mt-3 grid grid-cols-2 gap-2"
+                  aria-label="선택 해역 환경 지표"
+                ></div>
+
+                <div class="mt-4 border-t border-slate-100 pt-4">
+                  <div class="grid grid-cols-2 gap-2">
+                    <div class="rounded-lg bg-slate-50 p-3">
+                      <span class="block text-[8px] text-slate-500">자체 위험지수 단계</span>
+                      <strong id="selected-risk-level" class="mt-1 block text-sm">-</strong>
+                    </div>
+                    <div class="rounded-lg bg-slate-50 p-3">
+                      <span class="block text-[8px] text-slate-500">공식 적조특보 발령</span>
+                      <strong class="mt-1 block text-sm text-slate-700">연결 안 됨</strong>
+                    </div>
+                  </div>
+
+                  <div class="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                    <div class="flex items-start gap-2">
+                      <i data-lucide="badge-alert" class="mt-0.5 h-4 w-4 shrink-0 text-amber-600"></i>
+                      <div>
+                        <strong
+                          id="selected-official-comparison"
+                          class="block text-[10px] text-amber-900"
+                        ></strong>
+                        <p class="mt-1 text-[9px] leading-4 text-amber-800/80">
+                          세포밀도 기준과의 단순 비교이며 실제 공식 특보 발령이
+                          아닙니다.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mt-3 grid grid-cols-3 gap-1 text-center text-[7px]">
+                    <span class="rounded bg-amber-50 px-1 py-2 text-amber-800">
+                      <b class="block">10+</b>예비특보 수준
+                    </span>
+                    <span class="rounded bg-orange-50 px-1 py-2 text-orange-800">
+                      <b class="block">100+</b>주의보 수준
+                    </span>
+                    <span class="rounded bg-red-50 px-1 py-2 text-red-800">
+                      <b class="block">1,000+</b>경보 수준
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- 공공데이터 출처와 연결 상태 -->
+        <section
+          id="sources"
+          class="mt-6 scroll-mt-24 overflow-hidden rounded-xl bg-ocean-900 p-5 text-white shadow-panel sm:p-6"
+          aria-labelledby="sources-title"
+        >
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p class="text-[10px] font-extrabold tracking-[0.12em] text-teal-300">
+                PUBLIC DATA PIPELINE
+              </p>
+              <h2 id="sources-title" class="mt-1 text-xl font-extrabold">
+                공공데이터 출처와 시스템 작동 상태
+              </h2>
+              <p class="mt-2 max-w-3xl text-xs leading-5 text-slate-400">
+                연결된 필드만 관측값으로 표시하고, 연결되지 않은 필드는 예시값을
+                유지해 자료 성격을 혼동하지 않도록 합니다.
+              </p>
+            </div>
+            <span
+              id="source-mode-badge"
+              class="w-fit rounded border border-amber-300/20 bg-amber-300/10 px-2 py-1.5 text-[9px] font-bold text-amber-200"
+            >
+              연결 확인 중
+            </span>
+          </div>
+
+          <div
+            id="data-source-grid"
+            class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+            aria-label="공공데이터 연결 상태"
+          ></div>
+
+          <div
+            class="mt-4 grid gap-2 rounded-lg border border-white/10 bg-black/10 p-3 text-center sm:grid-cols-4"
+            aria-label="데이터 처리 과정"
+          >
+            <div class="rounded bg-white/[0.035] px-3 py-3">
+              <i data-lucide="database" class="mx-auto h-5 w-5 text-teal-300"></i>
+              <strong class="mt-2 block text-[10px]">1. 공공 관측자료</strong>
+              <small class="mt-1 block text-[8px] text-slate-500">NIFS · KOEM · KHOA 대체자료 검토</small>
+            </div>
+            <div class="rounded bg-white/[0.035] px-3 py-3">
+              <i data-lucide="git-merge" class="mx-auto h-5 w-5 text-teal-300"></i>
+              <strong class="mt-2 block text-[10px]">2. 해역·필드 매칭</strong>
+              <small class="mt-1 block text-[8px] text-slate-500">일치 항목만 관측 표시</small>
+            </div>
+            <div class="rounded bg-white/[0.035] px-3 py-3">
+              <i data-lucide="calculator" class="mx-auto h-5 w-5 text-teal-300"></i>
+              <strong class="mt-2 block text-[10px]">3. 자체 위험지수</strong>
+              <small class="mt-1 block text-[8px] text-slate-500">공식특보와 별도 계산</small>
+            </div>
+            <div class="rounded bg-white/[0.035] px-3 py-3">
+              <i data-lucide="shield-check" class="mx-auto h-5 w-5 text-teal-300"></i>
+              <strong class="mt-2 block text-[10px]">4. 안전한 화면 전환</strong>
+              <small class="mt-1 block text-[8px] text-slate-500">실패 시 시연모드 유지</small>
+            </div>
+          </div>
+
+          <div
+            id="data-warning-list"
+            class="mt-4 space-y-2"
+            aria-label="데이터 연결 주의사항"
+          ></div>
+
+          <div class="mt-4 flex items-start gap-2 border-t border-white/10 pt-4 text-[9px] leading-5 text-slate-500">
+            <i data-lucide="key-round" class="mt-0.5 h-3.5 w-3.5 shrink-0"></i>
+            <p>
+              API 키는 GitHub Secrets에서 관리하며 브라우저에는 전달하지 않습니다.
+              화면은 인증정보가 제거된 공개 데이터 캐시만 읽습니다.
+            </p>
+          </div>
+        </section>
+
+        <!-- 선택 해역 규칙 기반 브리핑 -->
+        <section
+          id="analysis"
+          class="mt-6 scroll-mt-24"
+        >
+          <article
+            class="briefing-card relative min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-panel"
+            aria-labelledby="briefing-title"
+          >
+            <div class="relative z-10">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <span class="grid h-11 w-11 place-items-center rounded-xl bg-teal-50 text-teal-700">
+                    <i data-lucide="bot" class="h-6 w-6"></i>
+                  </span>
+                  <div>
+                    <p class="text-[9px] font-extrabold tracking-[0.12em] text-tide-600">
+                      DATA BRIEFING
+                    </p>
+                    <h2 id="briefing-title" class="mt-1 text-base font-extrabold text-ocean-900">
+                      기장 해역 자동 해설
+                    </h2>
+                  </div>
+                </div>
+                <span class="rounded bg-teal-50 px-2 py-1 text-[8px] font-bold text-teal-700">
+                  규칙 기반
+                </span>
+              </div>
+
+              <p
+                id="briefing-summary"
+                class="mt-5 break-keep text-sm font-medium leading-7 text-slate-700"
+              ></p>
+
+              <div
+                id="briefing-signals"
+                class="mt-5 grid gap-2 sm:grid-cols-3 xl:grid-cols-1"
+                aria-label="주요 판단 신호"
+              ></div>
+
+              <div class="mt-4 rounded-lg border border-teal-100 bg-teal-50/70 p-3">
+                <div class="flex items-start gap-2">
+                  <i data-lucide="clipboard-check" class="mt-0.5 h-4 w-4 shrink-0 text-teal-700"></i>
+                  <div>
+                    <strong class="block text-[9px] text-teal-800">관찰 제안</strong>
+                    <p id="briefing-action" class="mt-1 text-[10px] leading-5 text-teal-900"></p>
+                  </div>
+                </div>
+              </div>
+
+              <p
+                id="briefing-disclaimer"
+                class="mt-4 flex items-start gap-2 border-t border-slate-100 pt-4 text-[9px] leading-4 text-slate-400"
+              ></p>
+            </div>
+          </article>
+        </section>
+
+        <!-- 선택 해역 7일 적조 위험 예측 -->
+        <section
+          id="forecast"
+          class="mt-6 scroll-mt-24 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-panel"
+          aria-labelledby="forecast-area-title"
+        >
+          <div class="border-b border-slate-100 p-4 sm:p-5">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div class="flex items-start gap-3">
+                <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700">
+                  <i data-lucide="chart-no-axes-combined" class="h-6 w-6"></i>
+                </span>
+                <div>
+                  <p class="text-[9px] font-extrabold tracking-[0.12em] text-violet-600">
+                    7-DAY RISK OUTLOOK
+                  </p>
+                  <h2
+                    id="forecast-area-title"
+                    class="mt-1 text-xl font-extrabold tracking-tight text-ocean-900"
+                  >
+                    기장 해역 7일 적조 위험 전망
+                  </h2>
+                  <p class="mt-2 text-xs leading-5 text-slate-500">
+                    현재 환경과 최근 세포밀도 변화를 이용해 D+1부터 D+7까지 계산합니다.
+                  </p>
+                </div>
+              </div>
+              <span
+                id="forecast-mode-badge"
+                class="forecast-mode-badge w-fit rounded-md px-2.5 py-1.5 text-[9px] font-extrabold"
+                data-mode="demo"
+              >
+                시연 예측 · 공식 예보 아님
+              </span>
+            </div>
+
+            <div
+              id="forecast-notice"
+              class="forecast-notice mt-4 flex items-start gap-2 rounded-lg border px-3 py-2.5 text-[10px] leading-5"
+              data-mode="demo"
+            ></div>
+          </div>
+
+          <div class="p-4 sm:p-5">
+            <div
+              id="forecast-summary"
+              class="grid gap-2 sm:grid-cols-2 xl:grid-cols-4"
+              aria-label="7일 예측 핵심 요약"
+            ></div>
+
+            <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50/70 p-3 sm:p-4">
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h3 class="text-sm font-extrabold text-ocean-900">일별 모델 위험도</h3>
+                  <p class="mt-1 text-[9px] text-slate-500">
+                    막대는 자체 0~100 위험지수이며 숫자 범위는 모델 불확실성입니다.
+                  </p>
+                </div>
+                <span class="text-[8px] font-bold text-slate-400">공식 적조특보와 별개</span>
+              </div>
+              <div
+                id="forecast-chart"
+                class="forecast-chart mt-4"
+                role="list"
+                aria-label="선택 해역 7일 모델 위험도"
+              ></div>
+            </div>
+
+            <details class="forecast-details mt-4 rounded-xl border border-slate-200">
+              <summary class="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-4 py-3 text-xs font-bold text-slate-700">
+                <span class="flex items-center gap-2">
+                  <i data-lucide="table-2" class="h-4 w-4 text-violet-600"></i>
+                  일별 예측 상세보기
+                </span>
+                <i data-lucide="chevron-down" class="forecast-details-icon h-4 w-4"></i>
+              </summary>
+              <div class="forecast-table-scroll border-t border-slate-100">
+                <table class="forecast-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">예측일</th>
+                      <th scope="col">위험도</th>
+                      <th scope="col">예측 세포밀도</th>
+                      <th scope="col">일 변화율</th>
+                      <th scope="col">모델 신뢰도</th>
+                    </tr>
+                  </thead>
+                  <tbody id="forecast-table-body"></tbody>
+                </table>
+              </div>
+            </details>
+
+            <div class="mt-4 grid gap-3 lg:grid-cols-[0.75fr_1.25fr]">
+              <div class="rounded-xl bg-ocean-900 p-4 text-white">
+                <span class="text-[8px] font-extrabold tracking-[0.12em] text-violet-300">
+                  MODEL INFORMATION
+                </span>
+                <strong id="forecast-model-version" class="mt-2 block text-sm">
+                  교육용 규칙모형 v0.1
+                </strong>
+                <span id="forecast-reference-time" class="mt-2 block text-[9px] text-slate-400"></span>
+                <p class="mt-3 text-[9px] leading-5 text-slate-300">
+                  통계적으로 학습·검증된 운영모델이 아닌 참고 시나리오입니다.
+                  신뢰도는 입력 완결성과 예측거리로 만든 참고치이며 검증 정확도가
+                  아닙니다. 실제 대응 전에는 국립수산과학원의 공식 적조정보를
+                  확인하세요.
+                </p>
+              </div>
+              <div class="rounded-xl border border-teal-100 bg-teal-50/60 p-4">
+                <strong class="flex items-center gap-2 text-xs text-teal-900">
+                  <i data-lucide="list-checks" class="h-4 w-4"></i>
+                  현재 모델의 계산 가정
+                </strong>
+                <ul
+                  id="forecast-assumptions"
+                  class="mt-3 grid gap-2 text-[10px] leading-5 text-teal-900 sm:grid-cols-3"
+                ></ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 현재 날짜 기준 월간 적조 달력 -->
+        <section
+          id="calendar"
+          class="mt-6 scroll-mt-24 rounded-xl border border-slate-200 bg-white p-4 shadow-panel sm:p-5"
+          aria-labelledby="calendar-title"
+        >
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p class="flex items-center gap-1.5 text-[10px] font-extrabold tracking-[0.12em] text-tide-600">
+                <i data-lucide="calendar-days" class="h-4 w-4"></i>
+                MONTHLY MONITORING
+              </p>
+              <h2 id="calendar-title" class="mt-1 text-xl font-extrabold tracking-tight text-ocean-900">
+                월간 적조 달력
+              </h2>
+              <p class="mt-2 text-xs leading-5 text-slate-500">
+                모델 위험도와 공식 관측을 분리해 날짜별 기록을 확인합니다.
+              </p>
+            </div>
+
+            <div
+              class="calendar-tabs flex w-full rounded-lg bg-slate-100 p-1 lg:w-auto"
+              role="tablist"
+              aria-label="달력 데이터 종류"
+            >
+              <button
+                id="calendar-model-tab"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                aria-controls="calendar-grid"
+                class="active flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-[10px] font-bold lg:flex-none"
+              >
+                <i data-lucide="flask-conical" class="h-3.5 w-3.5"></i>
+                모델 위험도
+              </button>
+              <button
+                id="calendar-official-tab"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="calendar-grid"
+                class="flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-[10px] font-bold lg:flex-none"
+              >
+                <i data-lucide="badge-check" class="h-3.5 w-3.5"></i>
+                공식 관측
+              </button>
+            </div>
+          </div>
+
+          <div
+            id="calendar-notice"
+            class="calendar-notice mt-4 flex flex-col gap-2 rounded-lg border px-3 py-2.5 text-[10px] sm:flex-row sm:items-center"
+            data-mode="model"
+          ></div>
+
+          <div
+            id="calendar-grid"
+            class="calendar-grid mt-4"
+            role="grid"
+            aria-label="월간 적조 위험 달력"
+          ></div>
+
+          <div class="calendar-legend mt-4 flex flex-wrap items-center justify-end gap-x-3 gap-y-2 text-[8px] text-slate-500">
+            <span><i class="calendar-swatch none"></i>기록 없음</span>
+            <span><i class="calendar-swatch low"></i>낮음</span>
+            <span><i class="calendar-swatch medium"></i>중간</span>
+            <span><i class="calendar-swatch high"></i>높음</span>
+            <span><i class="calendar-swatch very-high"></i>매우 높음</span>
+            <span><i class="calendar-swatch official"></i>공식 확인 기록</span>
+          </div>
+
+          <div
+            id="no-official-records"
+            class="mt-4 hidden rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-center text-[10px] leading-5 text-slate-500"
+          >
+            이 달에 연결된 공식 적조 관측 기록이 없습니다. 임의 기록은 표시하지
+            않았습니다.
+          </div>
+        </section>
+
+        <!-- 부산 6개 해역 기반 데이터 -->
+        <section id="area-data" class="mt-6 scroll-mt-24">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p class="text-[10px] font-extrabold tracking-[0.12em] text-tide-600">
+                DEMO MARINE AREAS
+              </p>
+              <h2 class="mt-1 text-xl font-extrabold tracking-tight text-ocean-900">
+                부산 주요 6개 해역 기반 데이터
+              </h2>
+            </div>
+            <p class="text-xs text-slate-500">좌표와 수치는 지도 구현 전 검토용입니다.</p>
+          </div>
+          <div
+            id="area-grid"
+            class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          ></div>
+        </section>
+
+        <!-- 위험지수 계산 구조 -->
+        <section class="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-panel">
+          <div class="grid lg:grid-cols-[0.8fr_1.2fr]">
+            <div class="bg-ocean-900 p-5 text-white sm:p-6">
+              <p class="text-[10px] font-extrabold tracking-[0.12em] text-teal-300">
+                RESEARCH PROTOTYPE
+              </p>
+              <h2 class="mt-2 text-xl font-extrabold">위험지수 계산 원칙</h2>
+              <p class="mt-3 break-keep text-xs leading-6 text-slate-300">
+                세포밀도에 가장 높은 가중치를 주고 수온, Chl-a, 염분,
+                용존산소, 최근 증가 추세를 종합합니다.
+              </p>
+              <div class="mt-5 rounded-lg border border-amber-300/20 bg-amber-300/10 p-3">
+                <strong class="text-xs text-amber-200">공식특보와 별개입니다.</strong>
+                <p class="mt-1 text-[10px] leading-5 text-amber-100/70">
+                  자체 위험단계는 사용자 이해를 돕는 교육용 분류이며 공식기관의
+                  예비특보·주의보·경보 발령을 의미하지 않습니다.
+                </p>
+              </div>
+            </div>
+
+            <div class="p-5 sm:p-6">
+              <div
+                id="weight-grid"
+                class="grid gap-x-8 gap-y-4 sm:grid-cols-2"
+                aria-label="위험지수 요소별 가중치"
+              ></div>
+              <div class="mt-6 grid grid-cols-5 overflow-hidden rounded-lg text-center text-[10px] font-bold">
+                <span class="bg-teal-100 px-2 py-3 text-teal-800">0~19<br />안전</span>
+                <span class="bg-amber-100 px-2 py-3 text-amber-800">20~39<br />관심</span>
+                <span class="bg-orange-100 px-2 py-3 text-orange-800">40~59<br />주의</span>
+                <span class="bg-red-100 px-2 py-3 text-red-800">60~79<br />경계</span>
+                <span class="bg-red-900 px-2 py-3 text-white">80~100<br />심각</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 데이터 성격 구분 -->
+        <section class="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-panel sm:p-6">
+          <div class="max-w-3xl">
+            <p class="text-[10px] font-extrabold tracking-[0.12em] text-tide-600">
+              DATA CLASSIFICATION
+            </p>
+            <h2 class="mt-1 text-xl font-extrabold tracking-tight text-ocean-900">
+              화면에서 반드시 구분하는 세 가지 데이터
+            </h2>
+            <p class="mt-2 break-keep text-xs leading-6 text-slate-500 sm:text-sm">
+              자료의 출처와 성격을 배지, 색상, 설명으로 구분해 사용자가 임의
+              계산값을 실제 관측값으로 오해하지 않도록 설계했습니다.
+            </p>
+          </div>
+
+          <div class="mt-5 grid gap-3 md:grid-cols-3">
+            <article class="rounded-lg border border-sky-200 bg-sky-50 p-4">
+              <div class="flex items-center justify-between">
+                <i data-lucide="activity" class="h-5 w-5 text-sky-600"></i>
+                <span class="rounded bg-sky-100 px-2 py-1 text-[9px] font-bold text-sky-700">
+                  관측값
+                </span>
+              </div>
+              <h3 class="mt-4 font-bold text-slate-900">공공기관 관측자료</h3>
+              <p class="mt-2 text-xs leading-5 text-slate-600">
+                조사 시각과 기관 출처를 함께 표시합니다. 현재 단계에서는 연결
+                전이므로 실제 관측값이 없습니다.
+              </p>
+              <strong class="mt-3 block text-xs text-sky-700">현재 상태 · 미연결</strong>
+            </article>
+
+            <article class="rounded-lg border border-teal-200 bg-teal-50 p-4">
+              <div class="flex items-center justify-between">
+                <i data-lucide="gauge" class="h-5 w-5 text-teal-600"></i>
+                <span class="rounded bg-teal-100 px-2 py-1 text-[9px] font-bold text-teal-700">
+                  파생 위험지수
+                </span>
+              </div>
+              <h3 class="mt-4 font-bold text-slate-900">자체 0~100 위험지수</h3>
+              <p class="mt-2 text-xs leading-5 text-slate-600">
+                세포밀도와 환경변수에 교육용 가중치를 적용한 계산값입니다.
+                공식 적조특보와 별개의 지표입니다.
+              </p>
+              <strong class="mt-3 block text-xs text-teal-700">현재 상태 · 시연 계산</strong>
+            </article>
+
+            <article class="rounded-lg border border-violet-200 bg-violet-50 p-4">
+              <div class="flex items-center justify-between">
+                <i data-lucide="sparkles" class="h-5 w-5 text-violet-600"></i>
+                <span class="rounded bg-violet-100 px-2 py-1 text-[9px] font-bold text-violet-700">
+                  미래 예측값
+                </span>
+              </div>
+              <h3 class="mt-4 font-bold text-slate-900">예측모델 결과</h3>
+              <p class="mt-2 text-xs leading-5 text-slate-600">
+                현재 환경의 지속성과 최근 변화 감쇠를 이용한 교육용 7일 참고
+                시나리오입니다. 검증된 운영 예보나 공식기관 발표가 아닙니다.
+              </p>
+              <strong class="mt-3 block text-xs text-violet-700">현재 상태 · 시연 예측 제공</strong>
+            </article>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="border-t border-white/10 bg-ocean-950 text-slate-400">
+      <div
+        class="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-6 text-[10px] sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8"
+      >
+        <strong class="text-slate-200">Busan Red Tide Live</strong>
+        <span id="footer-data-status">연구·교육용 프로토타입 · 데이터 상태 확인 중</span>
+        <span>Git 커밋 및 원격 작업 전 사용자 승인 필요</span>
+      </div>
+    </footer>
+
+    <script src="./scripts/config.js"></script>
+    <script type="module" src="./scripts/app.js"></script>
+  </body>
+</html>

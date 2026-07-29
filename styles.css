@@ -1,0 +1,1040 @@
+/* 기본 문서 표현과 Tailwind CDN 로딩 전 화면 깜빡임을 보완합니다. */
+:root {
+  color-scheme: light;
+  font-family:
+    Pretendard,
+    'Noto Sans KR',
+    'Apple SD Gothic Neo',
+    system-ui,
+    sans-serif;
+  background: #f1f5f9;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  overflow-x: hidden;
+}
+
+/* 키보드 사용자가 반복 메뉴를 건너뛸 수 있도록 합니다. */
+.skip-link {
+  position: fixed;
+  z-index: 9999;
+  left: 12px;
+  top: -60px;
+  padding: 10px 14px;
+  color: #fff;
+  background: #0f766e;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  transition: top 150ms ease;
+}
+
+.skip-link:focus {
+  top: 10px;
+}
+
+/* 모바일 메뉴는 작은 화면에서만 펼쳐지는 터치 친화형 목록입니다. */
+.mobile-navigation {
+  position: absolute;
+  top: 64px;
+  right: 14px;
+  left: 14px;
+  display: none;
+  padding: 8px;
+  background: rgba(9, 29, 46, 0.985);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 12px;
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-navigation[data-open='true'] {
+  display: grid;
+}
+
+.mobile-navigation a {
+  min-height: 44px;
+  padding: 11px 12px;
+  display: flex;
+  align-items: center;
+  color: #cbd5e1;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mobile-navigation a:hover,
+.mobile-navigation a:focus-visible {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* 바다 관제 화면 느낌을 위한 은은한 격자 배경입니다. */
+.hero-grid::before {
+  position: absolute;
+  inset: 0;
+  content: '';
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(45, 212, 191, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 212, 191, 0.035) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: linear-gradient(to right, black, transparent 78%);
+}
+
+.hero-grid::after {
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  right: -170px;
+  bottom: -280px;
+  content: '';
+  pointer-events: none;
+  border: 1px solid rgba(45, 212, 191, 0.14);
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 70px rgba(45, 212, 191, 0.025),
+    0 0 0 140px rgba(45, 212, 191, 0.018);
+}
+
+/* 제공된 부산 지도 이미지의 원본 비율을 유지합니다. */
+.map-shell {
+  aspect-ratio: 1040 / 714;
+  background: #5ab4e9;
+}
+
+.simple-map-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+}
+
+/* 위험 마커는 퍼센트 좌표로 배치되어 모든 화면 크기에 대응합니다. */
+.simple-map-marker {
+  position: absolute;
+  z-index: 10;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding: 0;
+  color: #0f263a;
+  background: transparent;
+  border: 0;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+
+.simple-map-marker__label {
+  padding: 2px 6px;
+  color: #0f263a;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.2;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(15, 38, 58, 0.18);
+}
+
+.simple-map-marker__dot {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  color: white;
+  font-size: 9px;
+  font-weight: 900;
+  background: var(--marker-color);
+  border: 3px solid white;
+  border-radius: 999px;
+  box-shadow: 0 5px 14px rgba(15, 38, 58, 0.34);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.simple-map-marker:hover .simple-map-marker__dot,
+.simple-map-marker:focus-visible .simple-map-marker__dot {
+  transform: scale(1.12);
+}
+
+.simple-map-marker.is-selected {
+  z-index: 12;
+}
+
+.simple-map-marker.is-selected .simple-map-marker__dot {
+  transform: scale(1.22);
+  box-shadow:
+    0 0 0 5px rgba(255, 255, 255, 0.8),
+    0 7px 18px rgba(15, 38, 58, 0.4);
+}
+
+.map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.map-legend i {
+  width: 7px;
+  height: 7px;
+  display: inline-block;
+  border-radius: 999px;
+}
+
+/* 상세 카드 상단에 해양 관제 화면의 은은한 파동 효과를 더합니다. */
+.detail-header::after {
+  position: absolute;
+  width: 190px;
+  height: 190px;
+  right: -72px;
+  bottom: -130px;
+  content: '';
+  border: 1px solid rgba(45, 212, 191, 0.18);
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 32px rgba(45, 212, 191, 0.035),
+    0 0 0 66px rgba(45, 212, 191, 0.02);
+}
+
+.risk-gauge {
+  --risk-color: #14b8a6;
+  --risk-angle: 0deg;
+  width: 78px;
+  height: 78px;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle, #091d2e 58%, transparent 60%),
+    conic-gradient(
+      var(--risk-color) 0deg var(--risk-angle),
+      rgba(148, 163, 184, 0.18) var(--risk-angle) 360deg
+    );
+  border-radius: 999px;
+}
+
+.risk-gauge strong {
+  color: var(--risk-color);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.risk-gauge span {
+  margin-top: 2px;
+  color: #71889b;
+  font-size: 8px;
+}
+
+/* 목록에서 선택된 해역을 지도 선택 상태와 동일하게 강조합니다. */
+.area-select-card {
+  width: 100%;
+  min-height: 44px;
+  appearance: none;
+  color: inherit;
+  text-align: left;
+}
+
+.area-select-card[aria-pressed='true'] {
+  border-color: #0d9488;
+  box-shadow:
+    0 0 0 2px rgba(13, 148, 136, 0.1),
+    0 16px 40px rgba(15, 38, 58, 0.08);
+}
+
+/* 24시간 SVG 그래프는 화면 폭에 맞춰 비율을 유지합니다. */
+.trend-chart {
+  width: 100%;
+  min-height: 270px;
+  overflow: hidden;
+}
+
+.trend-chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.chart-grid-line {
+  stroke: #e7edf1;
+  stroke-width: 1;
+}
+
+.chart-density-area {
+  fill: url('#density-gradient');
+}
+
+.chart-density-line,
+.chart-temperature-line {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-density-line {
+  stroke: #ef4444;
+}
+
+.chart-temperature-line {
+  stroke: #0ea5e9;
+}
+
+.chart-axis-label,
+.chart-time-label {
+  fill: #8291a0;
+  font-family: inherit;
+  font-size: 9px;
+}
+
+.chart-axis-title {
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.chart-latest-point {
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+/* 브리핑 카드 배경은 정보 전달을 방해하지 않는 선에서만 장식합니다. */
+.briefing-card::after {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  right: -120px;
+  top: -120px;
+  content: '';
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.09), transparent 68%);
+  border-radius: 999px;
+}
+
+.briefing-signal[data-tone='warning'] {
+  color: #9a3412;
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+.briefing-signal[data-tone='safe'] {
+  color: #0f766e;
+  background: #f0fdfa;
+  border-color: #99f6e4;
+}
+
+.briefing-signal[data-tone='neutral'] {
+  color: #475569;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+/* 7일 예측은 관측값과 혼동되지 않도록 보라색 계열과 별도 상태 배지를 사용합니다. */
+.forecast-mode-badge[data-mode='demo'],
+.forecast-notice[data-mode='demo'] {
+  color: #92400e;
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.forecast-mode-badge[data-mode='hybrid'],
+.forecast-notice[data-mode='hybrid'] {
+  color: #6d28d9;
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+}
+
+.forecast-mode-badge[data-mode='observed'],
+.forecast-notice[data-mode='observed'] {
+  color: #155e75;
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.forecast-summary-card {
+  min-width: 0;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.forecast-summary-card > span {
+  display: block;
+  color: #64748b;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.forecast-summary-card > strong {
+  display: flex;
+  align-items: center;
+  min-height: 25px;
+  margin-top: 6px;
+  color: #102a3e;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.forecast-summary-card > small {
+  display: block;
+  margin-top: 3px;
+  color: #94a3b8;
+  font-size: 8px;
+}
+
+.forecast-summary-card[data-direction='rising'] > strong {
+  color: #dc2626;
+}
+
+.forecast-summary-card[data-direction='falling'] > strong {
+  color: #0d9488;
+}
+
+.forecast-summary-card[data-direction='steady'] > strong {
+  color: #475569;
+}
+
+.forecast-chart {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.forecast-day {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: auto 132px auto auto auto;
+  gap: 5px;
+  padding: 8px 6px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+}
+
+.forecast-day__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px;
+  color: #64748b;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.forecast-day__heading strong {
+  color: #102a3e;
+  font-size: 14px;
+}
+
+.forecast-bar-track {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 132px;
+  overflow: hidden;
+  background:
+    linear-gradient(to top, transparent 24%, #e2e8f0 25%, transparent 26%),
+    linear-gradient(to top, transparent 49%, #e2e8f0 50%, transparent 51%),
+    linear-gradient(to top, transparent 74%, #e2e8f0 75%, transparent 76%),
+    #f8fafc;
+  border-radius: 6px;
+}
+
+.forecast-bar {
+  width: 100%;
+  min-height: 8%;
+  background: var(--forecast-color);
+  opacity: 0.82;
+  border-radius: 5px 5px 2px 2px;
+  transition: height 400ms ease;
+}
+
+.forecast-day__level {
+  overflow: hidden;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forecast-day__date {
+  overflow: hidden;
+  color: #475569;
+  font-size: 8px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forecast-day small {
+  color: #94a3b8;
+  font-size: 7px;
+}
+
+.forecast-details summary {
+  list-style: none;
+}
+
+.forecast-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.forecast-details[open] .forecast-details-icon {
+  transform: rotate(180deg);
+}
+
+.forecast-details-icon {
+  transition: transform 150ms ease;
+}
+
+.forecast-table-scroll {
+  overflow-x: auto;
+}
+
+.forecast-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.forecast-table th,
+.forecast-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.forecast-table thead th {
+  color: #64748b;
+  background: #f8fafc;
+  font-weight: 700;
+}
+
+.forecast-table tbody th {
+  color: #334155;
+  font-weight: 700;
+}
+
+.forecast-table tbody td {
+  color: #64748b;
+}
+
+.forecast-table tbody tr:last-child th,
+.forecast-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* 월간 달력은 데스크톱과 모바일에서 동일한 7열 구조를 유지합니다. */
+.calendar-tabs button {
+  min-height: 44px;
+  color: #64748b;
+  background: transparent;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.calendar-tabs button.active {
+  color: #102a3e;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(15, 38, 58, 0.08);
+}
+
+.calendar-notice[data-mode='model'] {
+  color: #92400e;
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.calendar-notice[data-mode='official'] {
+  color: #155e75;
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.calendar-notice strong {
+  width: fit-content;
+  flex: 0 0 auto;
+  padding: 3px 6px;
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 4px;
+  font-size: 8px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.calendar-weekday {
+  padding: 6px 0;
+  color: #64748b;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.calendar-weekday:first-child {
+  color: #dc2626;
+}
+
+.calendar-weekday:nth-child(7) {
+  color: #2563eb;
+}
+
+.calendar-cell {
+  position: relative;
+  min-height: 84px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.calendar-cell.empty {
+  background: #fbfdfe;
+  border-color: #f1f5f9;
+}
+
+.calendar-cell.low {
+  color: #9f3a42;
+  background: #fff1f2;
+  border-color: #ffe4e6;
+}
+
+.calendar-cell.medium {
+  color: #a61b2b;
+  background: #fecdd3;
+  border-color: #fda4af;
+}
+
+.calendar-cell.high {
+  color: #fff;
+  background: #dc4b56;
+  border-color: #c93743;
+}
+
+.calendar-cell.very-high {
+  color: #fff;
+  background: #7f1d1d;
+  border-color: #681616;
+}
+
+.calendar-cell.official {
+  color: #475569;
+  background: #fff;
+  border-color: #e2e8f0;
+}
+
+.calendar-cell.official.confirmed {
+  color: #115e59;
+  background: #ccfbf1;
+  border-color: #5eead4;
+}
+
+.calendar-cell.today {
+  outline: 2px solid #0d9488;
+  outline-offset: 1px;
+}
+
+.calendar-day {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.calendar-cell > strong {
+  margin: auto 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 19px;
+  line-height: 1;
+}
+
+.calendar-score-unit {
+  margin-top: 3px;
+  font-size: 7px;
+  opacity: 0.75;
+}
+
+.calendar-no-record {
+  margin: auto 0;
+  color: #a0aec0;
+  font-size: 7px;
+}
+
+.calendar-today-label {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  color: #0f766e;
+  font-size: 7px;
+  font-weight: 800;
+}
+
+.calendar-cell.high .calendar-today-label,
+.calendar-cell.very-high .calendar-today-label {
+  color: #ccfbf1;
+}
+
+.official-calendar-mark {
+  margin: auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: #0f766e;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.official-calendar-mark small {
+  color: #4b7f78;
+  font-size: 6px;
+  font-weight: 500;
+}
+
+.calendar-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.calendar-swatch {
+  width: 10px;
+  height: 10px;
+  display: inline-block;
+  border: 1px solid #e2e8f0;
+  border-radius: 2px;
+}
+
+.calendar-swatch.none {
+  background: #f8fafc;
+}
+
+.calendar-swatch.low {
+  background: #fff1f2;
+}
+
+.calendar-swatch.medium {
+  background: #fecdd3;
+}
+
+.calendar-swatch.high {
+  background: #dc4b56;
+}
+
+.calendar-swatch.very-high {
+  background: #7f1d1d;
+}
+
+.calendar-swatch.official {
+  background: #99f6e4;
+}
+
+/* 공공데이터 연결 상태와 필드별 출처를 같은 색 체계로 표시합니다. */
+#header-system-status[data-mode='hybrid'] {
+  color: #5eead4;
+  background: rgba(20, 184, 166, 0.1);
+  border-color: rgba(45, 212, 191, 0.2);
+}
+
+#system-mode-banner[data-mode='hybrid'] {
+  color: #115e59;
+  background: #f0fdfa;
+  border-color: #99f6e4;
+}
+
+#source-mode-badge[data-mode='hybrid'] {
+  color: #99f6e4;
+  background: rgba(20, 184, 166, 0.12);
+  border-color: rgba(94, 234, 212, 0.22);
+}
+
+[data-mode='hybrid'] {
+  color: #0f766e;
+  background-color: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.metric-source {
+  width: fit-content;
+  padding: 2px 4px;
+  border: 1px solid;
+  border-radius: 3px;
+  font-size: 7px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.metric-source[data-source='demo'] {
+  color: #a16207;
+  background: #fefce8;
+  border-color: #fde68a;
+}
+
+.metric-source[data-source='observed'] {
+  color: #0369a1;
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.metric-card {
+  position: relative;
+  overflow: visible;
+}
+
+.metric-help {
+  position: relative;
+  display: inline-flex;
+}
+
+.metric-help-button {
+  display: inline-grid;
+  min-width: 24px;
+  height: 18px;
+  padding: 0 5px 3px;
+  place-items: center;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.metric-help-button:hover,
+.metric-help-button:focus-visible,
+.metric-help-button[aria-expanded='true'] {
+  color: #0f766e;
+  background: #f0fdfa;
+  border-color: #99f6e4;
+}
+
+.metric-help-popover {
+  position: absolute;
+  z-index: 40;
+  width: min(250px, calc(100vw - 48px));
+  top: calc(100% + 7px);
+  right: 0;
+  padding: 9px 10px;
+  color: #e2e8f0;
+  font-size: 9px;
+  font-weight: 500;
+  line-height: 1.65;
+  text-align: left;
+  background: #102a3e;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(15, 38, 58, 0.25);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-3px);
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease,
+    visibility 150ms ease;
+}
+
+.metric-help-popover::before {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  right: 9px;
+  top: -5px;
+  content: '';
+  background: #102a3e;
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+  border-left: 1px solid rgba(148, 163, 184, 0.22);
+  transform: rotate(45deg);
+}
+
+.metric-help:hover .metric-help-popover,
+.metric-help:focus-within .metric-help-popover,
+.metric-help[data-open='true'] .metric-help-popover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.source-card[data-status='connected'] .source-status-icon,
+.source-card[data-status='connected'] .source-status-label {
+  color: #5eead4;
+  background: rgba(20, 184, 166, 0.12);
+}
+
+.source-card[data-status='ready'] .source-status-icon,
+.source-card[data-status='ready'] .source-status-label {
+  color: #7dd3fc;
+  background: rgba(14, 165, 233, 0.12);
+}
+
+.source-card[data-status='unavailable'] .source-status-icon,
+.source-card[data-status='unavailable'] .source-status-label {
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.12);
+}
+
+/* 위험도 막대가 갱신될 때 자연스럽게 보이도록 합니다. */
+[data-risk-fill] {
+  transition: width 500ms ease;
+}
+
+/* 키보드 사용자에게 현재 포커스를 명확히 보여 줍니다. */
+a:focus-visible,
+button:focus-visible {
+  outline: 3px solid rgba(45, 212, 191, 0.55);
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .map-legend {
+    right: 8px;
+    bottom: 8px;
+    max-width: calc(100% - 16px);
+    gap: 6px;
+    padding: 6px 8px;
+  }
+
+  .simple-map-marker {
+    gap: 1px;
+  }
+
+  .simple-map-marker__label {
+    padding: 1px 4px;
+    font-size: 8px;
+  }
+
+  .simple-map-marker__dot {
+    width: 25px;
+    height: 25px;
+    font-size: 8px;
+    border-width: 2px;
+  }
+
+  .risk-gauge {
+    width: 70px;
+    height: 70px;
+  }
+
+  .trend-chart {
+    min-height: 220px;
+  }
+
+  .chart-axis-label,
+  .chart-time-label {
+    font-size: 8px;
+  }
+
+  .forecast-chart {
+    gap: 4px;
+  }
+
+  .forecast-day {
+    grid-template-rows: auto 94px auto auto auto;
+    gap: 4px;
+    padding: 6px 3px;
+  }
+
+  .forecast-bar-track {
+    height: 94px;
+  }
+
+  .forecast-day__heading {
+    justify-content: center;
+  }
+
+  .forecast-day__heading > span {
+    display: none;
+  }
+
+  .forecast-day__heading strong {
+    font-size: 12px;
+  }
+
+  .forecast-day__date {
+    font-size: 7px;
+  }
+
+  .forecast-day small {
+    font-size: 6px;
+  }
+
+  .calendar-grid {
+    gap: 3px;
+  }
+
+  .calendar-cell {
+    min-height: 62px;
+    padding: 5px;
+  }
+
+  .calendar-cell > strong {
+    font-size: 14px;
+  }
+
+  .calendar-no-record,
+  .calendar-today-label,
+  .official-calendar-mark small {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-navigation,
+  .mobile-menu-button {
+    display: none !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .header-date {
+    display: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .brand-copy small {
+    display: none;
+  }
+
+  .brand-copy strong {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
