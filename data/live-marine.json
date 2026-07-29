@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-29T03:18:45.168Z",
+  "generatedAt": "2026-07-29T03:20:55.456Z",
   "collector": "github-actions",
   "mode": "hybrid",
   "areas": [
@@ -28,7 +28,7 @@
         "dissolvedOxygen": 100,
         "growthTrend": 43.75
       },
-      "referenceTime": "2026-07-28T14:00:00+09:00",
+      "referenceTime": "KOEM 관측시각 미제공",
       "dataStatus": {
         "measurements": "hybrid",
         "riskIndex": "derived-hybrid",
@@ -151,7 +151,7 @@
         "dissolvedOxygen": 100,
         "growthTrend": 11.25
       },
-      "referenceTime": "2026-07-28T14:00:00+09:00",
+      "referenceTime": "KOEM 관측시각 미제공",
       "dataStatus": {
         "measurements": "hybrid",
         "riskIndex": "derived-hybrid",
@@ -192,7 +192,7 @@
         "dissolvedOxygen": 0,
         "growthTrend": 5
       },
-      "referenceTime": "2026-07-28T14:00:00+09:00",
+      "referenceTime": "KOEM 관측시각 미제공",
       "dataStatus": {
         "measurements": "hybrid",
         "riskIndex": "derived-hybrid",
@@ -233,7 +233,7 @@
         "dissolvedOxygen": 20.039999999999996,
         "growthTrend": 0
       },
-      "referenceTime": "2026-07-28T14:00:00+09:00",
+      "referenceTime": "KOEM 관측시각 미제공",
       "dataStatus": {
         "measurements": "hybrid",
         "riskIndex": "derived-hybrid",
