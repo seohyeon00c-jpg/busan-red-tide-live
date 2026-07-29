@@ -41,7 +41,7 @@
 
     <!-- 무료 Lucide 아이콘 CDN을 사용합니다. -->
     <script src="https://unpkg.com/lucide@0.468.0"></script>
-    <link rel="stylesheet" href="./styles.css?v=20260729-weekly" />
+    <link rel="stylesheet" href="./styles.css?v=20260729-marine-v2" />
   </head>
   <body class="min-h-screen bg-slate-100 text-slate-900 antialiased">
     <a href="#main-content" class="skip-link">본문으로 바로가기</a>
@@ -621,8 +621,8 @@
             <div class="mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50/70 px-4 py-3 text-[10px] leading-5 text-amber-900">
               <i data-lucide="triangle-alert" class="mt-0.5 h-4 w-4 shrink-0"></i>
               <p>
-                <strong>현재 환경 기준 예측</strong>
-                수온·Chl-a·염분·용존산소를 이용해 계산한 참고 결과입니다.
+                <strong>날짜별 해양 수치예보 기반</strong>
+                예측 수온·해류·파고와 현재 관측자료를 결합한 참고 결과입니다.
               </p>
             </div>
           </div>
@@ -641,7 +641,7 @@
                     일별 모델 위험도
                   </h3>
                   <p class="mt-1 text-[9px] text-slate-500">
-                    막대는 자체 0~100 위험지수이며 숫자 범위는 예상 범위입니다.
+                    막대는 날짜별 해양예보를 반영한 자체 0~100 모델 위험지수입니다.
                   </p>
                 </div>
                 <span class="shrink-0 text-[8px] font-bold text-slate-400">
@@ -655,6 +655,12 @@
                 role="list"
                 aria-label="선택 해역 주간 적조 위험 전망"
               ></div>
+              <p
+                id="forecast-source-note"
+                class="mt-4 text-right text-[8px] leading-4 text-slate-400"
+              >
+                날짜별 해양 수치예보 연결 중
+              </p>
             </div>
           </div>
         </section>
@@ -788,6 +794,6 @@
     </footer>
 
     <script src="./scripts/config.js"></script>
-    <script type="module" src="./scripts/app.js?v=20260729-weekly"></script>
+    <script type="module" src="./scripts/app.js?v=20260729-marine-v2"></script>
   </body>
 </html>

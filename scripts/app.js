@@ -2,20 +2,22 @@ import { marineAreas } from './data.js';
 import {
   compareOfficialThreshold,
   getRiskColor,
-} from './risk.js?v=20260729-weekly';
+} from './risk.js?v=20260729-marine-v2';
 import { initializeBusanMap } from './map.js';
 import { createDataBriefing } from './briefing.js';
 import {
   initializeMonthlyRiskCalendar,
 } from './calendar.js';
-import { loadPublicMarineData } from './publicData.js';
-import { createSevenDayForecast } from './forecast.js?v=20260729-weekly';
+import { loadPublicMarineData } from './publicData.js?v=20260729-marine-v2';
+import { createSevenDayForecast } from './forecast.js?v=20260729-marine-v2';
+import { fetchMarineForecast } from './marineForecast.js?v=20260729-marine-v2';
 
 const numberFormatter = new Intl.NumberFormat('ko-KR');
 let activeAreas = marineAreas;
 let dashboardState;
 let selectedAreaId = activeAreas[0]?.id;
 let mapController;
+let forecastRequestId = 0;
 
 function getObservedFieldCount(area) {
   return Object.values(area.dataStatus?.fields ?? {}).filter(
@@ -202,7 +204,7 @@ function renderSystemState() {
     : 'NO OFFICIAL DATA';
 
   sourceModeBadge.textContent = official
-    ? '공식 데이터 전용'
+    ? '관측·예보 출처 분리'
     : '공식자료 없음';
   sourceModeBadge.dataset.mode = dashboardState.mode;
 
@@ -220,7 +222,17 @@ function renderDataSources() {
   const warningList = document.querySelector('#data-warning-list');
   if (!container || !warningList) return;
 
-  container.innerHTML = dashboardState.sources
+  const displayedSources = [
+    ...dashboardState.sources,
+    {
+      agency: 'Open-Meteo',
+      dataset: 'Marine API 해양 수치예보',
+      status: 'connected',
+      message: '무료·무키 연동 · 좌표별 해수면수온·해류·파고 8일 예보',
+    },
+  ];
+
+  container.innerHTML = displayedSources
     .map((source) => {
       const meta = sourceStatusMeta[source.status];
       return `
@@ -510,21 +522,67 @@ function renderDataBriefing(area) {
   }
 }
 
-function renderSevenDayForecast(area) {
-  const forecast = createSevenDayForecast(area);
+async function renderSevenDayForecast(area) {
+  const requestId = ++forecastRequestId;
   const chart = document.querySelector('#forecast-chart');
   const summary = document.querySelector('#forecast-summary');
+  const sourceNote = document.querySelector('#forecast-source-note');
   if (!chart || !summary) return;
 
   document.querySelector('#forecast-area-title').textContent =
     `${area.name} 해역 주간 적조 위험 전망`;
 
+  summary.innerHTML = `
+    <article class="forecast-summary-card sm:col-span-2">
+      <span>주간 해양예보</span>
+      <strong class="text-slate-600">자료 불러오는 중</strong>
+      <small>선택 해역의 날짜별 수온·해류·파고를 확인하고 있습니다.</small>
+    </article>
+  `;
+  chart.innerHTML = `
+    <p class="col-span-full py-10 text-center text-xs text-slate-500">
+      해양 수치예보를 불러오는 중입니다.
+    </p>
+  `;
+  if (sourceNote) {
+    sourceNote.textContent = '날짜별 해양 수치예보 연결 중';
+  }
+
+  let marineForecast;
+  try {
+    marineForecast = await fetchMarineForecast(area);
+  } catch (error) {
+    if (requestId !== forecastRequestId) return;
+
+    console.warn('주간 해양 수치예보를 불러오지 못했습니다.', error);
+    summary.innerHTML = `
+      <article class="forecast-summary-card sm:col-span-2">
+        <span>주간 예측</span>
+        <strong class="text-slate-500">예측자료 없음</strong>
+        <small>해양예보 연결에 실패해 임의 값으로 대체하지 않았습니다.</small>
+      </article>
+    `;
+    chart.innerHTML = `
+      <p class="col-span-full py-10 text-center text-xs text-slate-500">
+        날짜별 해양 예보자료를 가져오지 못했습니다.
+      </p>
+    `;
+    if (sourceNote) {
+      sourceNote.textContent = 'Open-Meteo Marine API 연결 실패';
+    }
+    return;
+  }
+
+  if (requestId !== forecastRequestId || area.id !== selectedAreaId) return;
+
+  const forecast = createSevenDayForecast(area, marineForecast);
+
   if (!forecast.available) {
     summary.innerHTML = `
       <article class="forecast-summary-card sm:col-span-2">
         <span>주간 예측</span>
-        <strong class="text-slate-500">자료 없음</strong>
-        <small>계산 가능한 해양환경 자료가 부족합니다.</small>
+        <strong class="text-slate-500">예측자료 없음</strong>
+        <small>날짜별 해수면수온 예보가 없어 계산하지 않았습니다.</small>
       </article>
     `;
     chart.innerHTML = `
@@ -532,16 +590,18 @@ function renderSevenDayForecast(area) {
         예측 자료가 없습니다.
       </p>
     `;
+    if (sourceNote) {
+      sourceNote.textContent = '사용 가능한 날짜별 해수면수온 예보 없음';
+    }
     return;
   }
 
   const firstDay = forecast.days[0];
-  const lastDay = forecast.days.at(-1);
   summary.innerHTML = `
     <article class="forecast-summary-card">
-      <span>오늘 위험도</span>
+      <span>오늘 모델 위험도</span>
       <strong style="color:${getRiskColor(firstDay.score)}">${firstDay.score}점</strong>
-      <small>${firstDay.level} · ${firstDay.lowerScore}~${firstDay.upperScore}점</small>
+      <small>${firstDay.level} · 예측 수온 ${firstDay.seaSurfaceTemperature.toFixed(1)}℃</small>
     </article>
     <article class="forecast-summary-card">
       <span>주간 최고 전망</span>
@@ -551,15 +611,15 @@ function renderSevenDayForecast(area) {
     <article class="forecast-summary-card" data-direction="${forecast.direction.key}">
       <span>위험도 흐름</span>
       <strong class="flex items-center gap-2">
-        <i data-lucide="move-right" class="h-5 w-5"></i>
+        <i data-lucide="${forecast.direction.icon}" class="h-5 w-5"></i>
         ${forecast.direction.label}
       </strong>
       <small>${forecast.direction.description}</small>
     </article>
     <article class="forecast-summary-card">
-      <span>마지막 날 모델 신뢰도</span>
-      <strong>${lastDay.confidence}%</strong>
-      <small>예측기간이 길수록 낮아짐</small>
+      <span>예측자료 충족도</span>
+      <strong>${firstDay.inputCoverage}%</strong>
+      <small>공식 세포밀도 ${forecast.hasCellDensity ? '포함' : '미포함'}</small>
     </article>
   `;
 
@@ -586,11 +646,19 @@ function renderSevenDayForecast(area) {
             ${day.level}
           </strong>
           <span class="forecast-day__date">${day.dateLabel}</span>
-          <small>${day.lowerScore}~${day.upperScore}점</small>
+          <small>
+            ${day.seaSurfaceTemperature.toFixed(1)}℃ ·
+            파고 ${Number.isFinite(day.waveHeight) ? day.waveHeight.toFixed(1) : '–'}m
+          </small>
         </article>
       `;
     })
     .join('');
+
+  if (sourceNote) {
+    sourceNote.textContent =
+      `${forecast.attribution} · 해수면수온·해류·파고 예보 사용`;
+  }
 
   if (window.lucide) {
     window.lucide.createIcons();
