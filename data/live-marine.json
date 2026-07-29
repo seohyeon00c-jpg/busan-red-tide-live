@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-29T03:14:38.652Z",
+  "generatedAt": "2026-07-29T03:16:27.362Z",
   "collector": "github-actions",
   "mode": "demo",
   "areas": [
@@ -271,7 +271,7 @@
       "agency": "해양환경공단",
       "dataset": "해양환경측정망",
       "status": "connected",
-      "message": "API 연결 · 부산 정점 확인 · 필드 num, oceanCode, oceanNm, eclgyZoneAreaCode, eclgyZoneAreaNm, stnpntCode"
+      "message": "API 연결 · 부산 정점 확인 · 필드 wtrtmpSfclyr, wtrtmpBtmlyr, salntSfclyr, salntBtmlyr, phDnstySfclyr, phDnstyBtmlyr, doxySfclyr, doxyBtmlyr"
     },
     {
       "id": "map",
