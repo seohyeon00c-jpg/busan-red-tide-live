@@ -511,13 +511,24 @@ function mergeKoem(records, areas) {
           'chla',
           'chlaSur',
           'chlASur',
+          'chlaSfclyr',
+          'chlASfclyr',
+          'clrplSfclyr',
+          'chlorophyllASfclyr',
           '클로로필a',
           '클로로필A표층',
           '엽록소a',
         ]),
       ),
       ph: asNumber(
-        pick(record, ['pH', 'PH', 'ph', 'phSur', '수소이온농도표층']),
+        pick(record, [
+          'pH',
+          'PH',
+          'ph',
+          'phSur',
+          'phDnstySfclyr',
+          '수소이온농도표층',
+        ]),
       ),
       dissolvedOxygen: asNumber(
         pick(record, [
@@ -525,6 +536,7 @@ function mergeKoem(records, areas) {
           'do',
           'doxSur',
           'doSur',
+          'doxySfclyr',
           '용존산소',
           '용존산소량표층',
         ]),
@@ -536,6 +548,7 @@ function mergeKoem(records, areas) {
           'wtemSur',
           'waterTemp',
           'wtrTmp',
+          'wtrtmpSfclyr',
         ]),
       ),
       salinity: asNumber(
@@ -545,6 +558,7 @@ function mergeKoem(records, areas) {
           'salntySur',
           'salinity',
           'salt',
+          'salntSfclyr',
         ]),
       ),
     };
