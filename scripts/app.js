@@ -2,15 +2,15 @@ import { marineAreas } from './data.js';
 import {
   compareOfficialThreshold,
   getRiskColor,
-} from './risk.js?v=20260729-unified-v3';
-import { initializeBusanMap } from './map.js';
+} from './risk.js?v=20260729-map-risk-v4';
+import { initializeBusanMap } from './map.js?v=20260729-map-risk-v4';
 import { createDataBriefing } from './briefing.js';
 import {
   initializeMonthlyRiskCalendar,
 } from './calendar.js';
-import { loadPublicMarineData } from './publicData.js?v=20260729-unified-v3';
-import { createSevenDayForecast } from './forecast.js?v=20260729-unified-v3';
-import { fetchMarineForecast } from './marineForecast.js?v=20260729-unified-v3';
+import { loadPublicMarineData } from './publicData.js?v=20260729-map-risk-v4';
+import { createSevenDayForecast } from './forecast.js?v=20260729-map-risk-v4';
+import { fetchMarineForecast } from './marineForecast.js?v=20260729-map-risk-v4';
 
 const numberFormatter = new Intl.NumberFormat('ko-KR');
 let activeAreas = marineAreas;
@@ -520,7 +520,7 @@ function renderSelectedModelRisk(day) {
 
   const riskColor = getRiskColor(day.score);
   riskScore.textContent = day.score;
-  riskLevel.textContent = `${day.level} · 주간 오늘값과 동일`;
+  riskLevel.textContent = `${day.level} · 지도·주간 오늘값과 동일`;
   riskLevel.style.color = riskColor;
   riskGaugeLabel.textContent = '모델 위험';
   riskGauge.style.setProperty('--risk-color', riskColor);
@@ -611,6 +611,7 @@ async function renderSevenDayForecast(area) {
     if (sourceNote) {
       sourceNote.textContent = 'Open-Meteo Marine API 연결 실패';
     }
+    mapController?.updateRiskScore(area.id, null);
     renderSelectedModelRisk(null);
     return;
   }
@@ -635,11 +636,17 @@ async function renderSevenDayForecast(area) {
     if (sourceNote) {
       sourceNote.textContent = '사용 가능한 날짜별 해수면수온 예보 없음';
     }
+    mapController?.updateRiskScore(area.id, null);
     renderSelectedModelRisk(null);
     return;
   }
 
   const firstDay = forecast.days[0];
+  mapController?.updateRiskScore(area.id, {
+    score: firstDay.score,
+    level: firstDay.level,
+    color: getRiskColor(firstDay.score),
+  });
   renderSelectedModelRisk(firstDay);
   summary.innerHTML = `
     <article class="forecast-summary-card">
@@ -707,6 +714,39 @@ async function renderSevenDayForecast(area) {
   if (window.lucide) {
     window.lucide.createIcons();
   }
+}
+
+/**
+ * 최신 공개 데이터 캐시와 좌표별 해양 수치예보를 결합해
+ * 6개 해역의 오늘 위험점수를 지도에 각각 표시합니다.
+ */
+async function renderMapRiskScores() {
+  await Promise.allSettled(
+    activeAreas.map(async (area) => {
+      try {
+        const marineForecast = await fetchMarineForecast(area);
+        const forecast = createSevenDayForecast(area, marineForecast);
+        const today = forecast.available ? forecast.days[0] : null;
+
+        mapController?.updateRiskScore(
+          area.id,
+          today
+            ? {
+                score: today.score,
+                level: today.level,
+                color: getRiskColor(today.score),
+              }
+            : null,
+        );
+      } catch (error) {
+        console.warn(
+          `${area.name} 지도 위험점수를 계산하지 못했습니다.`,
+          error,
+        );
+        mapController?.updateRiskScore(area.id, null);
+      }
+    }),
+  );
 }
 
 function updateAreaCardSelection() {
@@ -878,6 +918,7 @@ async function initializeApp() {
   renderAreas();
   renderDataSources();
   mapController = initializeBusanMap(activeAreas, selectArea);
+  void renderMapRiskScores();
   selectArea(selectedAreaId);
   initializeMonthlyRiskCalendar({
     officialObservations: dashboardState.officialObservations,
