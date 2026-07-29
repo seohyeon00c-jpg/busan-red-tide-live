@@ -1,7 +1,7 @@
 import {
   calculateEnvironmentalRisk,
   getRiskLevel,
-} from './risk.js';
+} from './risk.js?v=20260729-weekly';
 
 export const FORECAST_MODEL_VERSION = '주간 예측 규칙모형 v0.2';
 

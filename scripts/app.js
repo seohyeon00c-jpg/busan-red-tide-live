@@ -2,14 +2,14 @@ import { marineAreas } from './data.js';
 import {
   compareOfficialThreshold,
   getRiskColor,
-} from './risk.js';
+} from './risk.js?v=20260729-weekly';
 import { initializeBusanMap } from './map.js';
 import { createDataBriefing } from './briefing.js';
 import {
   initializeMonthlyRiskCalendar,
 } from './calendar.js';
 import { loadPublicMarineData } from './publicData.js';
-import { createSevenDayForecast } from './forecast.js';
+import { createSevenDayForecast } from './forecast.js?v=20260729-weekly';
 
 const numberFormatter = new Intl.NumberFormat('ko-KR');
 let activeAreas = marineAreas;
