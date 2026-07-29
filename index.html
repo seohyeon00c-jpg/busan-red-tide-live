@@ -41,7 +41,7 @@
 
     <!-- 무료 Lucide 아이콘 CDN을 사용합니다. -->
     <script src="https://unpkg.com/lucide@0.468.0"></script>
-    <link rel="stylesheet" href="./styles.css?v=20260729-area-calendar-v7" />
+    <link rel="stylesheet" href="./styles.css?v=20260729-map-legend-v10" />
   </head>
   <body class="min-h-screen bg-slate-100 text-slate-900 antialiased">
     <a href="#main-content" class="skip-link">본문으로 바로가기</a>
@@ -337,19 +337,20 @@
                     </p>
                   </div>
                 </div>
-
-                <div
-                  class="map-legend absolute bottom-3 right-3 z-20 flex flex-wrap gap-2 rounded-md border border-slate-200 bg-white/95 px-3 py-2 text-[8px] font-semibold text-slate-600 shadow-lg backdrop-blur"
-                   aria-label="오늘 모델 위험점수 범례"
-                 >
-                   <span><i style="background:#14b8a6"></i>안전 0~19</span>
-                   <span><i style="background:#f59e0b"></i>관심 20~39</span>
-                   <span><i style="background:#f97316"></i>주의 40~59</span>
-                   <span><i style="background:#dc2626"></i>경계 60~79</span>
-                   <span><i style="background:#7f1d1d"></i>심각 80~100</span>
-                   <span><i style="background:#94a3b8"></i>자료 없음</span>
-                </div>
               </div>
+
+              <div
+                class="map-legend mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-[8px] font-semibold text-slate-600 sm:justify-end"
+                aria-label="오늘 모델 위험점수 범례"
+              >
+                <span><i style="background:#14b8a6"></i>안전 0~19</span>
+                <span><i style="background:#f59e0b"></i>관심 20~39</span>
+                <span><i style="background:#f97316"></i>주의 40~59</span>
+                <span><i style="background:#dc2626"></i>경계 60~79</span>
+                <span><i style="background:#7f1d1d"></i>심각 80~100</span>
+                <span><i style="background:#94a3b8"></i>자료 없음</span>
+              </div>
+
               <p class="mt-3 flex items-start gap-2 text-[9px] leading-4 text-slate-400">
                 <i data-lucide="info" class="mt-0.5 h-3.5 w-3.5 shrink-0"></i>
                 제공된 부산 행정구역 이미지를 배경으로 사용하며, 마커 위치는 해역의
