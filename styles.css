@@ -917,9 +917,6 @@ button:focus-visible {
 
 @media (max-width: 640px) {
   .map-legend {
-    right: 8px;
-    bottom: 8px;
-    max-width: calc(100% - 16px);
     gap: 6px;
     padding: 6px 8px;
   }
