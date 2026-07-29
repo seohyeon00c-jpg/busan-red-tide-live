@@ -89,6 +89,12 @@
             데이터 브리핑
           </a>
           <a
+            href="#forecast"
+            class="rounded-lg px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/5 hover:text-white"
+          >
+            주간 전망
+          </a>
+          <a
             href="#calendar"
             class="rounded-lg px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/5 hover:text-white"
           >
@@ -137,6 +143,7 @@
         <a href="#overview">서비스 소개</a>
         <a href="#monitoring">해역 지도</a>
         <a href="#analysis">데이터 브리핑</a>
+        <a href="#forecast">주간 전망</a>
         <a href="#calendar">위험 달력</a>
         <a href="#sources">데이터 출처</a>
       </nav>
@@ -153,7 +160,7 @@
               class="inline-flex items-center gap-2 rounded-md border border-teal-300/20 bg-teal-400/10 px-3 py-1.5 text-xs font-bold text-teal-200"
             >
               <i data-lucide="database" class="h-4 w-4"></i>
-              공식 공공데이터 전용
+              BUSAN COAST MONITORING
             </div>
             <h1
               class="mt-5 max-w-3xl text-3xl font-extrabold leading-tight tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl"
@@ -164,8 +171,8 @@
             <p
               class="mt-5 max-w-2xl break-keep text-sm leading-7 text-slate-300 sm:text-base"
             >
-              국립수산과학원·해양환경공단·부산시에서 확인된 공식값만 표시합니다.
-              공식 응답이 없는 항목에는 임의 숫자나 예시값을 넣지 않습니다.
+              부산 주요 연안의 해양환경을 한눈에 확인하고 주간 적조 예측을
+              함께 살펴볼 수 있습니다.
             </p>
             <div class="mt-7 flex flex-wrap items-center gap-3">
               <span
@@ -580,6 +587,78 @@
           </article>
         </section>
 
+        <!-- 선택 해역 주간 적조 위험 예측 -->
+        <section
+          id="forecast"
+          class="mt-6 scroll-mt-24 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-panel"
+          aria-labelledby="forecast-area-title"
+        >
+          <div class="border-b border-slate-100 p-4 sm:p-5">
+            <div class="flex items-start gap-4">
+              <span class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-violet-50 text-violet-700">
+                <i data-lucide="chart-no-axes-combined" class="h-7 w-7"></i>
+              </span>
+              <div>
+                <p class="text-[10px] font-extrabold tracking-[0.16em] text-violet-600">
+                  WEEKLY RISK OUTLOOK
+                </p>
+                <h2
+                  id="forecast-area-title"
+                  class="mt-1 text-2xl font-extrabold tracking-tight text-ocean-900"
+                >
+                  기장 해역 주간 적조 위험 전망
+                </h2>
+                <p class="mt-2 text-xs leading-5 text-slate-500">
+                  오늘부터 다음 주 같은 요일까지의 위험도를 계산합니다.
+                </p>
+              </div>
+            </div>
+
+            <span class="mt-5 inline-flex rounded-md bg-amber-50 px-3 py-2 text-[9px] font-extrabold text-amber-800">
+              모델 예측 · 공식 예보 아님
+            </span>
+
+            <div class="mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50/70 px-4 py-3 text-[10px] leading-5 text-amber-900">
+              <i data-lucide="triangle-alert" class="mt-0.5 h-4 w-4 shrink-0"></i>
+              <p>
+                <strong>현재 환경 기준 예측</strong>
+                수온·Chl-a·염분·용존산소를 이용해 계산한 참고 결과입니다.
+              </p>
+            </div>
+          </div>
+
+          <div class="p-4 sm:p-5">
+            <div
+              id="forecast-summary"
+              class="grid gap-3 sm:grid-cols-2"
+              aria-label="주간 예측 핵심 요약"
+            ></div>
+
+            <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50/60 p-3 sm:p-5">
+              <div class="flex items-end justify-between gap-4">
+                <div>
+                  <h3 class="text-base font-extrabold text-ocean-900">
+                    일별 모델 위험도
+                  </h3>
+                  <p class="mt-1 text-[9px] text-slate-500">
+                    막대는 자체 0~100 위험지수이며 숫자 범위는 예상 범위입니다.
+                  </p>
+                </div>
+                <span class="shrink-0 text-[8px] font-bold text-slate-400">
+                  공식 적조특보와 별개
+                </span>
+              </div>
+
+              <div
+                id="forecast-chart"
+                class="forecast-chart mt-5"
+                role="list"
+                aria-label="선택 해역 주간 적조 위험 전망"
+              ></div>
+            </div>
+          </div>
+        </section>
+
         <!-- 현재 날짜 기준 월간 적조 달력 -->
         <section
           id="calendar"
@@ -662,7 +741,7 @@
             </p>
           </div>
 
-          <div class="mt-5 grid gap-3 md:grid-cols-3">
+          <div class="mt-5 grid gap-3 md:grid-cols-2">
             <article class="rounded-lg border border-sky-200 bg-sky-50 p-4">
               <div class="flex items-center justify-between">
                 <i data-lucide="activity" class="h-5 w-5 text-sky-600"></i>
@@ -693,20 +772,6 @@
               <strong class="mt-3 block text-xs text-slate-700">예시·보간값 · 사용 안 함</strong>
             </article>
 
-            <article class="rounded-lg border border-violet-200 bg-violet-50 p-4">
-              <div class="flex items-center justify-between">
-                <i data-lucide="calculator" class="h-5 w-5 text-violet-600"></i>
-                <span class="rounded bg-violet-100 px-2 py-1 text-[9px] font-bold text-violet-700">
-                  산정 보류
-                </span>
-              </div>
-              <h3 class="mt-4 font-bold text-slate-900">위험지수와 미래 예측</h3>
-              <p class="mt-2 text-xs leading-5 text-slate-600">
-                세포밀도·Chl-a·증가추세 등 필수 공식 자료가 부족해 현재는
-                위험지수와 7일 예측을 계산하지 않습니다.
-              </p>
-              <strong class="mt-3 block text-xs text-violet-700">현재 상태 · 제공 안 함</strong>
-            </article>
           </div>
         </section>
       </div>

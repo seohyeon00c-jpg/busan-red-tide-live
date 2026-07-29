@@ -1,10 +1,9 @@
 import {
-  calculateRisk,
+  calculateEnvironmentalRisk,
   getRiskLevel,
-  getTemperatureSuitability,
 } from './risk.js';
 
-export const FORECAST_MODEL_VERSION = '교육용 규칙모형 v0.1';
+export const FORECAST_MODEL_VERSION = '주간 예측 규칙모형 v0.2';
 
 const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
 
@@ -20,32 +19,19 @@ const weekdayFormatter = new Intl.DateTimeFormat('ko-KR', {
   weekday: 'short',
 });
 
-function getForecastInputMode(area) {
-  const fieldStatuses = Object.values(area.dataStatus?.fields ?? {});
-  const observedFieldCount = fieldStatuses.filter(
-    (status) => status === 'observed',
-  ).length;
-
-  if (fieldStatuses.length > 0 && observedFieldCount === fieldStatuses.length) {
-    return {
-      key: 'observed',
-      label: '관측자료 기반 참고 예측',
-      badge: '실험 예측',
-    };
-  }
-
-  if (observedFieldCount > 0 || area.dataStatus?.measurements === 'hybrid') {
-    return {
-      key: 'hybrid',
-      label: '관측·예시 혼합자료 기반 참고 예측',
-      badge: '혼합자료 예측',
-    };
-  }
+function getForecastInputMode(area, environmentalRisk) {
+  const historicalInput = /2024년 연평균/.test(area.referenceTime ?? '');
+  const unknownObservationTime =
+    /미제공|정보 없음/.test(area.referenceTime ?? '');
 
   return {
-    key: 'demo',
-    label: '예시 데이터 기반 시연 예측',
-    badge: '시연 예측',
+    key: historicalInput ? 'historical-derived' : 'official-derived',
+    label: '수온·Chl-a·염분·용존산소 조합 모델',
+    badge: '모델 예측',
+    historicalInput,
+    unknownObservationTime,
+    inputCount: environmentalRisk.inputCount,
+    completeness: environmentalRisk.completeness,
   };
 }
 
@@ -57,92 +43,57 @@ function normalizeBaseDate(value) {
   return safeDate;
 }
 
-function getDirection(firstScore, lastScore) {
-  const difference = lastScore - firstScore;
-
-  if (difference >= 5) {
-    return {
-      key: 'rising',
-      label: '상승 전망',
-      description: `${difference}점 상승`,
-    };
-  }
-
-  if (difference <= -5) {
-    return {
-      key: 'falling',
-      label: '하락 전망',
-      description: `${Math.abs(difference)}점 하락`,
-    };
-  }
-
+function getDirection() {
   return {
     key: 'steady',
     label: '비슷한 수준',
-    description: `${Math.abs(difference)}점 이내 변화`,
+    description: '변화 없음',
   };
 }
 
 /**
- * 현재 환경이 유지된다는 가정과 최근 세포밀도 변화의 감쇠를 결합합니다.
- * 학습된 운영 예측모델이 아니며 연구·교육용 참고 시나리오만 제공합니다.
+ * 현재 공식 환경값이 유지된다는 조건으로 오늘부터 다음 주 같은 요일까지 전망합니다.
+ * 미래 관측값·기상예보·세포밀도를 생성하지 않는 연구·교육용 시나리오입니다.
  */
 export function createSevenDayForecast(area, options = {}) {
   const baseDate = normalizeBaseDate(options.baseDate ?? new Date());
-  const inputMode = getForecastInputMode(area);
-  const temperatureSuitability =
-    getTemperatureSuitability(Number(area.waterTemperature) || 0) / 100;
-  const initialGrowthSignal =
-    clamp(Number(area.recentCellGrowth) || 0, -25, 45) / 100;
-  const environmentPersistence = 0.45 + temperatureSuitability * 0.55;
-  const initialCellDensity = Math.max(0, Number(area.cellDensity) || 0);
-  let projectedCellDensity = initialCellDensity;
+  const environmentalRisk = calculateEnvironmentalRisk(area);
+  const inputMode = getForecastInputMode(area, environmentalRisk);
 
-  const days = Array.from({ length: 7 }, (_, index) => {
-    const dayOffset = index + 1;
-    const trendAttenuation = Math.exp(-index * 0.22);
-    const dailyGrowthRate =
-      initialGrowthSignal *
-      0.58 *
-      trendAttenuation *
-      environmentPersistence;
-
-    projectedCellDensity = clamp(
-      projectedCellDensity * (1 + dailyGrowthRate),
-      0,
-      100000,
-    );
-
-    const projectedMeasurements = {
-      ...area,
-      cellDensity: projectedCellDensity,
-      recentCellGrowth: dailyGrowthRate * 100,
+  if (!environmentalRisk.available) {
+    return {
+      available: false,
+      areaId: area.id,
+      areaName: area.name,
+      generatedAt: baseDate.toISOString(),
+      referenceTime: area.referenceTime,
+      modelVersion: FORECAST_MODEL_VERSION,
+      inputMode,
+      days: [],
+      assumptions: [
+        '수온·Chl-a·염분·용존산소 중 공식값이 2개 이상 필요',
+        '자료가 부족한 경우 임의 수치로 보완하지 않음',
+      ],
     };
-    const calculatedRisk = calculateRisk(projectedMeasurements);
-    const densityChangePoints =
-      Math.log10(
-        (projectedCellDensity + 1) / (initialCellDensity + 1),
-      ) * 8;
-    const score = Math.round(
-      clamp(
-        area.riskScore +
-          (calculatedRisk.score - area.riskScore) * 0.55 +
-          densityChangePoints,
-        0,
-        100,
-      ),
-    );
-    const uncertainty = Math.round(
-      3 + dayOffset * 1.8 + Math.abs(initialGrowthSignal) * dayOffset * 3,
-    );
+  }
+
+  const confidenceBase = inputMode.historicalInput
+    ? 38
+    : inputMode.unknownObservationTime
+      ? 44
+      : 52;
+
+  const days = Array.from({ length: 8 }, (_, index) => {
+    const dayOffset = index;
+    const forecastStep = index + 1;
+    const score = environmentalRisk.score;
+    const uncertainty =
+      10 +
+      forecastStep * 3 +
+      (4 - environmentalRisk.inputCount) * 3 +
+      (inputMode.historicalInput ? 7 : 0);
     const confidence = Math.round(
-      clamp(
-        86 -
-          dayOffset * 5.5 -
-          Math.abs(initialGrowthSignal) * dayOffset * 2,
-        40,
-        82,
-      ),
+      clamp(confidenceBase - forecastStep * 3, 15, confidenceBase),
     );
     const forecastDate = new Date(
       baseDate.getTime() + dayOffset * DAY_IN_MILLISECONDS,
@@ -158,32 +109,31 @@ export function createSevenDayForecast(area, options = {}) {
       lowerScore: clamp(score - uncertainty, 0, 100),
       upperScore: clamp(score + uncertainty, 0, 100),
       confidence,
-      projectedCellDensity: Math.round(projectedCellDensity),
-      projectedDailyGrowth: Number((dailyGrowthRate * 100).toFixed(1)),
-      dataStatus:
-        inputMode.key === 'demo' ? 'demo-forecast' : 'experimental-forecast',
+      dataStatus: 'official-derived-forecast',
     };
   });
 
   const peak = days.reduce((highest, day) =>
     day.score > highest.score ? day : highest,
   );
-  const direction = getDirection(days[0].score, days.at(-1).score);
+  const direction = getDirection();
 
   return {
+    available: true,
     areaId: area.id,
     areaName: area.name,
     generatedAt: baseDate.toISOString(),
     referenceTime: area.referenceTime,
     modelVersion: FORECAST_MODEL_VERSION,
     inputMode,
+    environmentalRisk,
     direction,
     peak,
     days,
     assumptions: [
-      '현재 수온·염분·Chl-a·용존산소 환경이 유지된다고 가정',
-      '최근 세포밀도 변화는 시간이 지날수록 약해지도록 감쇠',
-      '기상·해류·강수의 미래 예보는 아직 반영하지 않음',
+      '현재 공식 수온·Chl-a·염분·용존산소 환경이 전망기간 동안 유지된다고 가정',
+      '세포밀도·최근 증가추세가 없어 적조 발생확률이 아닌 환경 위험도만 계산',
+      '기상·해류·강수의 미래 예보는 반영하지 않으며 기간이 길수록 불확실성 확대',
     ],
   };
 }

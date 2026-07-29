@@ -1,11 +1,15 @@
 import { marineAreas } from './data.js';
-import { compareOfficialThreshold } from './risk.js';
+import {
+  compareOfficialThreshold,
+  getRiskColor,
+} from './risk.js';
 import { initializeBusanMap } from './map.js';
 import { createDataBriefing } from './briefing.js';
 import {
   initializeMonthlyRiskCalendar,
 } from './calendar.js';
 import { loadPublicMarineData } from './publicData.js';
+import { createSevenDayForecast } from './forecast.js';
 
 const numberFormatter = new Intl.NumberFormat('ko-KR');
 let activeAreas = marineAreas;
@@ -207,8 +211,7 @@ function renderSystemState() {
     : '공식 관측자료 없음';
 
   if (footerDataStatus) {
-    footerDataStatus.textContent =
-      '연구·교육용 프로토타입 · 공식 공공데이터만 표시 · 자료 없는 항목은 비움';
+    footerDataStatus.textContent = '연구·교육용 프로토타입';
   }
 }
 
@@ -373,8 +376,8 @@ function renderTopRiskArea() {
   document.querySelector('#top-risk-bar').style.backgroundColor = color;
   document.querySelector('#top-data-note').innerHTML = `
     <i data-lucide="info" class="mt-0.5 h-3.5 w-3.5 shrink-0"></i>
-    공식 응답이 없는 수치는 표시하지 않습니다. 세포밀도·Chl-a 등 필수값이
-    부족해 자체 위험지수와 미래 예측은 산정하지 않습니다.
+    공식 응답이 없는 관측값은 표시하지 않습니다. 세포밀도가 없어 종합 위험지수는
+    산정하지 않지만, 수온 등을 조합한 주간 예측은 별도로 제공합니다.
   `;
 }
 
@@ -507,6 +510,93 @@ function renderDataBriefing(area) {
   }
 }
 
+function renderSevenDayForecast(area) {
+  const forecast = createSevenDayForecast(area);
+  const chart = document.querySelector('#forecast-chart');
+  const summary = document.querySelector('#forecast-summary');
+  if (!chart || !summary) return;
+
+  document.querySelector('#forecast-area-title').textContent =
+    `${area.name} 해역 주간 적조 위험 전망`;
+
+  if (!forecast.available) {
+    summary.innerHTML = `
+      <article class="forecast-summary-card sm:col-span-2">
+        <span>주간 예측</span>
+        <strong class="text-slate-500">자료 없음</strong>
+        <small>계산 가능한 해양환경 자료가 부족합니다.</small>
+      </article>
+    `;
+    chart.innerHTML = `
+      <p class="col-span-full py-10 text-center text-xs text-slate-500">
+        예측 자료가 없습니다.
+      </p>
+    `;
+    return;
+  }
+
+  const firstDay = forecast.days[0];
+  const lastDay = forecast.days.at(-1);
+  summary.innerHTML = `
+    <article class="forecast-summary-card">
+      <span>오늘 위험도</span>
+      <strong style="color:${getRiskColor(firstDay.score)}">${firstDay.score}점</strong>
+      <small>${firstDay.level} · ${firstDay.lowerScore}~${firstDay.upperScore}점</small>
+    </article>
+    <article class="forecast-summary-card">
+      <span>주간 최고 전망</span>
+      <strong style="color:${getRiskColor(forecast.peak.score)}">${forecast.peak.score}점</strong>
+      <small>${forecast.peak.dateLabel} ${forecast.peak.weekday}</small>
+    </article>
+    <article class="forecast-summary-card" data-direction="${forecast.direction.key}">
+      <span>위험도 흐름</span>
+      <strong class="flex items-center gap-2">
+        <i data-lucide="move-right" class="h-5 w-5"></i>
+        ${forecast.direction.label}
+      </strong>
+      <small>${forecast.direction.description}</small>
+    </article>
+    <article class="forecast-summary-card">
+      <span>마지막 날 모델 신뢰도</span>
+      <strong>${lastDay.confidence}%</strong>
+      <small>예측기간이 길수록 낮아짐</small>
+    </article>
+  `;
+
+  chart.innerHTML = forecast.days
+    .map((day) => {
+      const color = getRiskColor(day.score);
+      return `
+        <article
+          class="forecast-day"
+          role="listitem"
+          aria-label="${day.dateLabel} ${day.weekday}, 적조 위험 ${day.score}점 ${day.level}"
+        >
+          <div class="forecast-day__heading">
+            <span>${day.weekday}</span>
+            <strong>${day.score}</strong>
+          </div>
+          <div class="forecast-bar-track" aria-hidden="true">
+            <span
+              class="forecast-bar"
+              style="height:${Math.max(8, day.score)}%;--forecast-color:${color}"
+            ></span>
+          </div>
+          <strong class="forecast-day__level" style="color:${color}">
+            ${day.level}
+          </strong>
+          <span class="forecast-day__date">${day.dateLabel}</span>
+          <small>${day.lowerScore}~${day.upperScore}점</small>
+        </article>
+      `;
+    })
+    .join('');
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+}
+
 function updateAreaCardSelection() {
   document.querySelectorAll('[data-area-id]').forEach((card) => {
     card.setAttribute(
@@ -523,6 +613,7 @@ function selectArea(areaId, options = {}) {
   selectedAreaId = areaId;
   renderAreaDetail(area);
   renderDataBriefing(area);
+  renderSevenDayForecast(area);
   updateAreaCardSelection();
   mapController?.selectArea(areaId, {
     moveMap: Boolean(options.moveMap),
