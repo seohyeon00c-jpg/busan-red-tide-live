@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-29T03:06:58.081Z",
+  "generatedAt": "2026-07-29T03:11:47.733Z",
   "collector": "github-actions",
   "mode": "demo",
   "areas": [
@@ -271,7 +271,7 @@
       "agency": "해양환경공단",
       "dataset": "해양환경측정망",
       "status": "connected",
-      "message": "API 연결 · 부산 해역 정점 매칭 필요"
+      "message": "API 연결 · 미매칭 정점 대변항 H01, 부산남항 H01, 부산남항 H02"
     },
     {
       "id": "map",
