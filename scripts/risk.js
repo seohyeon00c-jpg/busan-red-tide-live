@@ -19,6 +19,16 @@ export const ENVIRONMENT_FORECAST_WEIGHTS = Object.freeze({
   dissolvedOxygen: 0.15,
 });
 
+export const DAILY_FORECAST_WEIGHTS = Object.freeze({
+  cellDensity: 0.45,
+  temperature: 0.25,
+  chlorophyllA: 0.1,
+  salinity: 0.05,
+  dissolvedOxygen: 0.05,
+  currentRetention: 0.05,
+  calmSea: 0.05,
+});
+
 const clamp = (value, minimum = 0, maximum = 100) =>
   Math.min(maximum, Math.max(minimum, value));
 
@@ -54,6 +64,16 @@ function getDissolvedOxygenRisk(dissolvedOxygen) {
 
 function getGrowthTrendScore(growthTrend) {
   return clamp((Math.max(0, growthTrend) / 80) * 100);
+}
+
+function getCurrentRetentionScore(currentVelocity) {
+  if (!Number.isFinite(currentVelocity)) return 0;
+  return clamp(((2.5 - currentVelocity) / 2.5) * 100);
+}
+
+function getCalmSeaScore(waveHeight) {
+  if (!Number.isFinite(waveHeight)) return 0;
+  return clamp(((1.5 - waveHeight) / 1.5) * 100);
 }
 
 export function getRiskLevel(score) {
@@ -179,6 +199,85 @@ export function calculateEnvironmentalRisk(measurements) {
         measurements.dataStatus?.fields?.[factor.field] === 'observed'
           ? Math.round(factor.score)
           : null,
+      ]),
+    ),
+  };
+}
+
+/**
+ * 날짜별 해양 수치예보와 현재 공식 관측자료를 결합한 모델 위험지수입니다.
+ * 관측값이 없는 요소의 가중치는 다른 요소에 재분배하지 않습니다.
+ * 따라서 세포밀도 없이 환경만 적합한 경우 심각 단계가 나오지 않습니다.
+ */
+export function calculateDailyForecastRisk(measurements, forecastDay) {
+  const isObserved = (field) =>
+    measurements.dataStatus?.fields?.[field] === 'observed' &&
+    Number.isFinite(measurements[field]);
+
+  const factors = {
+    cellDensity: {
+      available: isObserved('cellDensity'),
+      score: isObserved('cellDensity')
+        ? getCellDensityScore(measurements.cellDensity)
+        : 0,
+    },
+    temperature: {
+      available: Number.isFinite(forecastDay.seaSurfaceTemperature),
+      score: Number.isFinite(forecastDay.seaSurfaceTemperature)
+        ? getTemperatureSuitability(forecastDay.seaSurfaceTemperature)
+        : 0,
+    },
+    chlorophyllA: {
+      available: isObserved('chlorophyllA'),
+      score: isObserved('chlorophyllA')
+        ? getChlorophyllScore(measurements.chlorophyllA)
+        : 0,
+    },
+    salinity: {
+      available: isObserved('salinity'),
+      score: isObserved('salinity')
+        ? getSalinityScore(measurements.salinity)
+        : 0,
+    },
+    dissolvedOxygen: {
+      available: isObserved('dissolvedOxygen'),
+      score: isObserved('dissolvedOxygen')
+        ? getDissolvedOxygenRisk(measurements.dissolvedOxygen)
+        : 0,
+    },
+    currentRetention: {
+      available: Number.isFinite(forecastDay.oceanCurrentVelocity),
+      score: getCurrentRetentionScore(forecastDay.oceanCurrentVelocity),
+    },
+    calmSea: {
+      available: Number.isFinite(forecastDay.waveHeight),
+      score: getCalmSeaScore(forecastDay.waveHeight),
+    },
+  };
+
+  const score = Math.round(
+    Object.entries(factors).reduce(
+      (total, [key, factor]) =>
+        total + factor.score * DAILY_FORECAST_WEIGHTS[key],
+      0,
+    ),
+  );
+  const availableWeight = Object.entries(factors).reduce(
+    (total, [key, factor]) =>
+      total + (factor.available ? DAILY_FORECAST_WEIGHTS[key] : 0),
+    0,
+  );
+
+  return {
+    available: factors.temperature.available,
+    score,
+    level: getRiskLevel(score),
+    hasCellDensity: factors.cellDensity.available,
+    inputCoverage: Math.round(availableWeight * 100),
+    breakdown: Object.fromEntries(
+      Object.entries(factors).map(([key, factor]) => [
+        key,
+        factor.available ? Math.round(factor.score) : null,
       ]),
     ),
   };

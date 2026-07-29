@@ -5,7 +5,7 @@ const BUSAN_MARINE_URL =
   'https://apis.data.go.kr/6260000/BusanMrnEnvrnInfoService/getMrnEnvrnInfo';
 const REQUEST_TIMEOUT = 8000;
 const KOEM_REQUEST_TIMEOUT = 30000;
-const PUBLIC_CACHE_URL = './data/live-marine.json';
+const PUBLIC_CACHE_URL = './data/live-marine.json?v=20260729-marine-v2';
 const PUBLIC_CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
 const MEASUREMENT_FIELDS = [
   'cellDensity',
@@ -1106,7 +1106,7 @@ export async function loadPublicMarineData(baseAreas, options = {}) {
     );
   } else {
     warnings.unshift(
-      '공식 관측값만 반영했습니다. 자료가 없는 지표는 비워 두며 위험지수와 미래 예측은 산정하지 않습니다.',
+      '관측 화면은 공식값만 반영합니다. 자료가 없는 지표는 비워 두며 주간 모델 전망은 별도 해양예보를 사용합니다.',
     );
   }
 
