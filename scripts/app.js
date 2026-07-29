@@ -91,15 +91,6 @@ const iconColorClasses = {
 
 const detailMetricDefinitions = [
   {
-    key: 'cellDensity',
-    label: '적조생물 세포밀도',
-    icon: 'activity',
-    format: (value) => numberFormatter.format(value),
-    unit: 'cells/mL',
-    description:
-      '적조생물의 양을 직접 나타내는 핵심 지표입니다. 값이 빠르게 늘수록 적조 발생·확산 가능성이 커질 수 있습니다.',
-  },
-  {
     key: 'waterTemperature',
     label: '수온',
     icon: 'thermometer',
@@ -414,7 +405,6 @@ function renderAreaDetail(area) {
   );
   const metrics = document.querySelector('#detail-metrics');
   const dataBadge = document.querySelector('#selected-data-badge');
-  const organismSource = getFieldSource(area, 'organism');
 
   document.querySelector('#selected-area-name').textContent = area.name;
   document.querySelector('#selected-area-detail').textContent = area.detail;
@@ -423,12 +413,6 @@ function renderAreaDetail(area) {
     '날짜별 해양예보 연결 중';
   document.querySelector('#selected-risk-level').style.color = riskColor;
   riskGaugeLabel.textContent = '계산 중';
-  document.querySelector('#selected-organism').textContent =
-    organismSource.value === 'observed' ? area.organism : '자료 없음';
-  document.querySelector('#selected-organism-source').textContent =
-    organismSource.label;
-  document.querySelector('#selected-organism-source').dataset.source =
-    organismSource.value;
   document.querySelector('#selected-reference-time').textContent =
     `${formatReferenceTime(area.referenceTime)} 기준`;
 
