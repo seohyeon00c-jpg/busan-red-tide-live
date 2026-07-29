@@ -41,7 +41,7 @@
 
     <!-- 무료 Lucide 아이콘 CDN을 사용합니다. -->
     <script src="https://unpkg.com/lucide@0.468.0"></script>
-    <link rel="stylesheet" href="./styles.css?v=20260729-map-legend-v10" />
+    <link rel="stylesheet" href="./styles.css?v=20260729-page-flow-v11" />
   </head>
   <body class="min-h-screen bg-slate-100 text-slate-900 antialiased">
     <a href="#main-content" class="skip-link">본문으로 바로가기</a>
@@ -53,7 +53,7 @@
       <div
         class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-[72px] lg:px-8"
       >
-        <a href="#overview" class="flex items-center gap-3" aria-label="서비스 홈">
+        <a href="#monitoring" class="flex items-center gap-3" aria-label="서비스 홈">
           <span
             class="grid h-10 w-10 place-items-center rounded-xl border border-teal-300/20 bg-tide-600 shadow-lg shadow-teal-950/30"
           >
@@ -69,7 +69,7 @@
           </span>
         </a>
 
-        <nav class="hidden items-center gap-1 lg:flex" aria-label="주요 메뉴">
+        <nav class="hidden" aria-label="주요 메뉴">
           <a
             href="#overview"
             class="rounded-lg px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/5 hover:text-white"
@@ -120,11 +120,17 @@
             id="today-label"
             class="header-date text-[10px] font-medium text-slate-400 sm:text-xs"
           ></span>
+          <span
+            id="current-page-title"
+            class="hidden rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-bold text-slate-200 sm:inline-flex"
+          >
+            해역 위험 모니터링
+          </span>
           <button
             id="mobile-menu-button"
             type="button"
-            class="mobile-menu-button grid h-11 w-11 place-items-center rounded-lg border border-white/10 bg-white/5 text-slate-200 lg:hidden"
-            aria-label="모바일 메뉴 열기"
+            class="mobile-menu-button grid h-11 w-11 place-items-center rounded-lg border border-white/10 bg-white/5 text-slate-200"
+            aria-label="페이지 메뉴 열기"
             aria-expanded="false"
             aria-controls="mobile-navigation"
           >
@@ -137,21 +143,23 @@
         id="mobile-navigation"
         class="mobile-navigation"
         data-open="false"
-        aria-label="모바일 주요 메뉴"
+        aria-label="페이지 메뉴"
         aria-hidden="true"
       >
-        <a href="#overview">서비스 소개</a>
-        <a href="#monitoring">해역 지도</a>
-        <a href="#analysis">데이터 브리핑</a>
-        <a href="#forecast">주간 전망</a>
-        <a href="#calendar">위험 달력</a>
-        <a href="#sources">데이터 출처</a>
+        <a href="#monitoring" data-page-link="monitoring">
+          <strong>해역 위험 모니터링</strong>
+          <span>지도 · 상세정보 · 브리핑 · 전망 · 달력 · 관측자료</span>
+        </a>
+        <a href="#system-mode-banner" data-page-link="data">
+          <strong>데이터·산정 정보</strong>
+          <span>공식자료 요약 · 위험지수 계산 원칙 · 출처</span>
+        </a>
       </nav>
     </header>
 
     <main id="main-content">
       <!-- 1단계 핵심 소개 -->
-      <section id="overview" class="hero-grid relative overflow-hidden bg-ocean-950">
+      <section id="overview" class="hidden hero-grid relative overflow-hidden bg-ocean-950">
         <div
           class="relative z-10 mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 sm:py-16 lg:grid-cols-[1.35fr_0.65fr] lg:items-center lg:px-8 lg:py-20"
         >
@@ -707,7 +715,7 @@
         </section>
 
         <!-- 공식 데이터 표시 원칙 -->
-        <section class="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-panel sm:p-6">
+        <section id="official-data-policy" class="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-panel sm:p-6">
           <div class="max-w-3xl">
             <p class="text-[10px] font-extrabold tracking-[0.12em] text-tide-600">
               OFFICIAL DATA POLICY
@@ -860,6 +868,6 @@
     </footer>
 
     <script src="./scripts/config.js"></script>
-    <script type="module" src="./scripts/app.js?v=20260729-detail-cleanup-v9"></script>
+    <script type="module" src="./scripts/app.js?v=20260729-page-flow-v11"></script>
   </body>
 </html>
