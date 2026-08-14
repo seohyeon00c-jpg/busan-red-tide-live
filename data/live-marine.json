@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-14T18:09:59.174Z",
+  "generatedAt": "2026-08-14T20:04:26.494Z",
   "collector": "github-actions",
   "mode": "official",
   "areas": [
@@ -248,9 +248,9 @@
   ],
   "warnings": [
     "관측 화면은 공식값만 반영합니다. 자료가 없는 지표는 비워 두며 주간 모델 전망은 별도 해양예보를 사용합니다.",
-    "KOEM 연결 실패: 브라우저 CORS 또는 네트워크 오류",
+    "KOEM 연결 실패: HTTP 504",
     "해운대·광안리는 부산시 2024년 공식 연평균 자료이며 실시간 값이 아닙니다.",
-    "부산시 해양환경측정망 API 연결 실패: 브라우저 CORS 또는 네트워크 오류"
+    "부산시 해양환경측정망 API 연결 실패: HTTP 403"
   ],
   "officialObservations": []
 }
