@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-02T21:04:00.555Z",
+  "generatedAt": "2026-09-02T23:19:19.584Z",
   "collector": "github-actions",
   "mode": "official",
   "areas": [
@@ -12,29 +12,29 @@
       "longitude": 129.246,
       "cellDensity": null,
       "organism": null,
-      "waterTemperature": 16.838,
+      "waterTemperature": null,
       "chlorophyllA": null,
-      "salinity": 33.148,
-      "dissolvedOxygen": 2.559,
-      "ph": 7.91,
+      "salinity": null,
+      "dissolvedOxygen": null,
+      "ph": null,
       "recentCellGrowth": null,
       "riskScore": null,
       "riskLevel": "산정 불가",
       "riskBreakdown": null,
-      "referenceTime": "KOEM 관측시각 미제공",
+      "referenceTime": "공식 관측자료 없음",
       "dataStatus": {
-        "measurements": "observed",
+        "measurements": "unavailable",
         "riskIndex": "unavailable",
         "officialAlert": "not-connected",
         "forecast": "unavailable",
         "fields": {
           "cellDensity": "unavailable",
           "organism": "unavailable",
-          "waterTemperature": "observed",
+          "waterTemperature": "unavailable",
           "chlorophyllA": "unavailable",
-          "salinity": "observed",
-          "dissolvedOxygen": "observed",
-          "ph": "observed"
+          "salinity": "unavailable",
+          "dissolvedOxygen": "unavailable",
+          "ph": "unavailable"
         }
       }
     },
@@ -114,29 +114,29 @@
       "longitude": 129.0874,
       "cellDensity": null,
       "organism": null,
-      "waterTemperature": 29.603,
+      "waterTemperature": null,
       "chlorophyllA": null,
-      "salinity": 28.961,
-      "dissolvedOxygen": 2.433,
-      "ph": 8.29,
+      "salinity": null,
+      "dissolvedOxygen": null,
+      "ph": null,
       "recentCellGrowth": null,
       "riskScore": null,
       "riskLevel": "산정 불가",
       "riskBreakdown": null,
-      "referenceTime": "KOEM 관측시각 미제공",
+      "referenceTime": "공식 관측자료 없음",
       "dataStatus": {
-        "measurements": "observed",
+        "measurements": "unavailable",
         "riskIndex": "unavailable",
         "officialAlert": "not-connected",
         "forecast": "unavailable",
         "fields": {
           "cellDensity": "unavailable",
           "organism": "unavailable",
-          "waterTemperature": "observed",
+          "waterTemperature": "unavailable",
           "chlorophyllA": "unavailable",
-          "salinity": "observed",
-          "dissolvedOxygen": "observed",
-          "ph": "observed"
+          "salinity": "unavailable",
+          "dissolvedOxygen": "unavailable",
+          "ph": "unavailable"
         }
       }
     },
@@ -148,29 +148,29 @@
       "longitude": 128.9631,
       "cellDensity": null,
       "organism": null,
-      "waterTemperature": 24.116,
+      "waterTemperature": null,
       "chlorophyllA": null,
-      "salinity": 31.456,
-      "dissolvedOxygen": 11.647,
-      "ph": 8.34,
+      "salinity": null,
+      "dissolvedOxygen": null,
+      "ph": null,
       "recentCellGrowth": null,
       "riskScore": null,
       "riskLevel": "산정 불가",
       "riskBreakdown": null,
-      "referenceTime": "KOEM 관측시각 미제공",
+      "referenceTime": "공식 관측자료 없음",
       "dataStatus": {
-        "measurements": "observed",
+        "measurements": "unavailable",
         "riskIndex": "unavailable",
         "officialAlert": "not-connected",
         "forecast": "unavailable",
         "fields": {
           "cellDensity": "unavailable",
           "organism": "unavailable",
-          "waterTemperature": "observed",
+          "waterTemperature": "unavailable",
           "chlorophyllA": "unavailable",
-          "salinity": "observed",
-          "dissolvedOxygen": "observed",
-          "ph": "observed"
+          "salinity": "unavailable",
+          "dissolvedOxygen": "unavailable",
+          "ph": "unavailable"
         }
       }
     },
@@ -182,29 +182,29 @@
       "longitude": 128.8315,
       "cellDensity": null,
       "organism": null,
-      "waterTemperature": 19.358,
+      "waterTemperature": null,
       "chlorophyllA": null,
-      "salinity": 31.782,
-      "dissolvedOxygen": 6.908,
-      "ph": 7.99,
+      "salinity": null,
+      "dissolvedOxygen": null,
+      "ph": null,
       "recentCellGrowth": null,
       "riskScore": null,
       "riskLevel": "산정 불가",
       "riskBreakdown": null,
-      "referenceTime": "KOEM 관측시각 미제공",
+      "referenceTime": "공식 관측자료 없음",
       "dataStatus": {
-        "measurements": "observed",
+        "measurements": "unavailable",
         "riskIndex": "unavailable",
         "officialAlert": "not-connected",
         "forecast": "unavailable",
         "fields": {
           "cellDensity": "unavailable",
           "organism": "unavailable",
-          "waterTemperature": "observed",
+          "waterTemperature": "unavailable",
           "chlorophyllA": "unavailable",
-          "salinity": "observed",
-          "dissolvedOxygen": "observed",
-          "ph": "observed"
+          "salinity": "unavailable",
+          "dissolvedOxygen": "unavailable",
+          "ph": "unavailable"
         }
       }
     }
@@ -228,8 +228,8 @@
       "id": "koem",
       "agency": "해양환경공단",
       "dataset": "해양환경측정망",
-      "status": "connected",
-      "message": "API 연결 · 부산 정점 11곳 환경값 반영"
+      "status": "unavailable",
+      "message": "연결 실패 · 관련 항목은 자료 없음"
     },
     {
       "id": "busan",
@@ -248,8 +248,9 @@
   ],
   "warnings": [
     "관측 화면은 공식값만 반영합니다. 자료가 없는 지표는 비워 두며 주간 모델 전망은 별도 해양예보를 사용합니다.",
+    "KOEM 연결 실패: 브라우저 CORS 또는 네트워크 오류",
     "해운대·광안리는 부산시 2024년 공식 연평균 자료이며 실시간 값이 아닙니다.",
-    "부산시 해양환경측정망 API 연결 실패: HTTP 403"
+    "부산시 해양환경측정망 API 연결 실패: 브라우저 CORS 또는 네트워크 오류"
   ],
   "officialObservations": []
 }
