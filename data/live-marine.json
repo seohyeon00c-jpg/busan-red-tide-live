@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-05T10:35:39.726Z",
+  "generatedAt": "2026-09-05T15:14:23.506Z",
   "collector": "github-actions",
   "mode": "official",
   "areas": [
@@ -214,8 +214,8 @@
       "id": "nifs",
       "agency": "국립수산과학원",
       "dataset": "적조정보 · 실시간 해양수산환경",
-      "status": "unavailable",
-      "message": "연결 실패 · 관련 항목은 자료 없음"
+      "status": "connected",
+      "message": "API 연결 · 기간 내 부산 매칭 자료 없음"
     },
     {
       "id": "khoa",
@@ -248,7 +248,6 @@
   ],
   "warnings": [
     "관측 화면은 공식값만 반영합니다. 자료가 없는 지표는 비워 두며 주간 모델 전망은 별도 해양예보를 사용합니다.",
-    "NIFS 연결 실패: 요청 시간 초과, API 응답 오류: invalid license",
     "KOEM 연결 실패: 브라우저 CORS 또는 네트워크 오류",
     "해운대·광안리는 부산시 2024년 공식 연평균 자료이며 실시간 값이 아닙니다.",
     "부산시 해양환경측정망 API 연결 실패: 브라우저 CORS 또는 네트워크 오류"
